@@ -75,7 +75,11 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit({
-      ...values,
+      name: values.name,
+      category: values.category,
+      purchase_cost: values.purchase_cost,
+      purchase_quantity: values.purchase_quantity,
+      purchase_unit: values.purchase_unit,
       notes: values.notes || null,
       units_per_case: showUnitsPerCase ? values.units_per_case || null : null,
     });
