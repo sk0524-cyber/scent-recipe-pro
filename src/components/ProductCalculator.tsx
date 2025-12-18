@@ -203,7 +203,16 @@ export function ProductCalculator({
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const formData: ProductFormData = {
-      ...values,
+      name: values.name,
+      product_type: values.product_type,
+      units_per_batch: values.units_per_batch,
+      fill_weight_per_unit: values.fill_weight_per_unit,
+      fill_unit: values.fill_unit,
+      labor_rate_per_hour: values.labor_rate_per_hour,
+      labor_hours_per_batch: values.labor_hours_per_batch,
+      shipping_overhead_per_batch: values.shipping_overhead_per_batch,
+      retail_markup: values.retail_markup,
+      wholesale_markup: values.wholesale_markup,
       materials_cost_per_unit: calculations.totalMaterialsCostPerUnit,
       packaging_cost_per_unit: calculations.totalPackagingCostPerUnit,
       labor_cost_per_unit: calculations.laborCostPerUnit,
@@ -211,8 +220,19 @@ export function ProductCalculator({
       total_cogs_per_unit: calculations.totalCOGS,
       wholesale_price: calculations.wholesalePrice,
       retail_price: calculations.retailPrice,
-      formula_items: values.formula_items.filter(item => item.material_id && item.percentage > 0),
-      component_items: values.component_items.filter(item => item.material_id && item.quantity_per_unit > 0),
+      formula_items: values.formula_items
+        .filter(item => item.material_id && item.percentage > 0)
+        .map(item => ({
+          material_id: item.material_id!,
+          percentage: item.percentage!,
+          slot_type: item.slot_type,
+        })),
+      component_items: values.component_items
+        .filter(item => item.material_id && item.quantity_per_unit > 0)
+        .map(item => ({
+          material_id: item.material_id!,
+          quantity_per_unit: item.quantity_per_unit!,
+        })),
     };
     onSave(formData);
   };
