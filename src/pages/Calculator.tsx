@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, ArrowLeft, Download } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,8 @@ import { useMaterials } from '@/hooks/useMaterials';
 import { useProducts, ProductWithItems, ProductFormData } from '@/hooks/useProducts';
 import { ProductCalculator } from '@/components/ProductCalculator';
 import { ProductCard } from '@/components/ProductCard';
+import { exportProductsToCSV } from '@/lib/export';
+import { toast } from '@/hooks/use-toast';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,10 +157,27 @@ export default function Calculator() {
               Create products with formulas and see calculated COGS and pricing.
             </p>
           </div>
-          <Button onClick={handleCreateNew} variant="warm">
-            <Plus className="mr-2 h-4 w-4" />
-            New Product
-          </Button>
+          <div className="flex gap-3">
+            {products.length > 0 && (
+              <Button
+                variant="outline"
+                onClick={() => {
+                  exportProductsToCSV(products);
+                  toast({
+                    title: 'Export complete',
+                    description: `Exported ${products.length} product(s) to CSV.`,
+                  });
+                }}
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+            )}
+            <Button onClick={handleCreateNew} variant="warm">
+              <Plus className="mr-2 h-4 w-4" />
+              New Product
+            </Button>
+          </div>
         </div>
 
         {/* Products list */}
