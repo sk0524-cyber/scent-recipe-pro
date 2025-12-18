@@ -8,6 +8,8 @@ export interface Material {
   purchase_quantity: number;
   purchase_unit: string;
   units_per_case: number | null;
+  weight_per_case: number | null;
+  weight_per_case_unit: string | null;
   cost_per_unit: number;
   notes: string | null;
 }
@@ -52,15 +54,33 @@ export interface Product {
 
 /**
  * Calculate cost per usable unit based on purchase details
+ * For weight-based case purchases (like wax), returns cost per oz
  */
 export function calculateCostPerUnit(
   purchaseCost: number,
   purchaseQuantity: number,
   purchaseUnit: string,
   unitsPerCase: number | null,
-  category: string
+  category: string,
+  weightPerCase: number | null = null,
+  weightPerCaseUnit: string | null = null
 ): number {
-  // For case/pack/bag items, divide by units per case
+  // For case/pack/bag items with weight (e.g., wax sold as 45lb/case)
+  if (['case', 'pack', 'bag', 'box'].includes(purchaseUnit) && weightPerCase && weightPerCase > 0 && weightPerCaseUnit) {
+    // Calculate cost per weight unit first
+    const costPerWeightUnit = purchaseCost / weightPerCase;
+    
+    // Convert to cost per oz for consistency in formula calculations
+    if (weightPerCaseUnit === 'lb') {
+      return costPerWeightUnit / 16; // Convert $/lb to $/oz
+    } else if (weightPerCaseUnit === 'grams') {
+      return costPerWeightUnit / 28.3495; // Convert $/gram to $/oz
+    }
+    // Already in oz
+    return costPerWeightUnit;
+  }
+  
+  // For case/pack/bag items with piece count, divide by units per case
   if (['case', 'pack', 'bag', 'box'].includes(purchaseUnit) && unitsPerCase && unitsPerCase > 0) {
     return purchaseCost / unitsPerCase;
   }
@@ -76,7 +96,18 @@ export function calculateCostPerUnit(
 /**
  * Get the display unit for a material's cost per unit
  */
-export function getCostPerUnitLabel(purchaseUnit: string, category: string): string {
+export function getCostPerUnitLabel(
+  purchaseUnit: string, 
+  category: string,
+  weightPerCase: number | null = null,
+  weightPerCaseUnit: string | null = null
+): string {
+  // For case with weight (like wax), show per oz
+  if (['case', 'pack', 'bag', 'box'].includes(purchaseUnit) && weightPerCase && weightPerCaseUnit) {
+    return 'per oz';
+  }
+  
+  // For case/pack with piece count
   if (['case', 'pack', 'bag', 'box'].includes(purchaseUnit)) {
     return 'per piece';
   }

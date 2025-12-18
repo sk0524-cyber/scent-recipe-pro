@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { MATERIAL_CATEGORIES, PURCHASE_UNITS, CASE_UNIT_CATEGORIES } from '@/lib/constants';
+import { MATERIAL_CATEGORIES, PURCHASE_UNITS, WEIGHT_UNITS, WEIGHT_BASED_CATEGORIES } from '@/lib/constants';
 import { Material, MaterialFormData } from '@/hooks/useMaterials';
 import { calculateCostPerUnit, getCostPerUnitLabel, formatCurrency } from '@/lib/calculations';
 
@@ -31,6 +31,8 @@ const formSchema = z.object({
   purchase_quantity: z.coerce.number().min(0.001, 'Quantity must be greater than 0'),
   purchase_unit: z.string().min(1, 'Unit is required'),
   units_per_case: z.coerce.number().nullable().optional(),
+  weight_per_case: z.coerce.number().nullable().optional(),
+  weight_per_case_unit: z.string().nullable().optional(),
   notes: z.string().max(500).nullable().optional(),
 });
 
@@ -51,6 +53,8 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
       purchase_quantity: material?.purchase_quantity || 1,
       purchase_unit: material?.purchase_unit || 'each',
       units_per_case: material?.units_per_case || null,
+      weight_per_case: material?.weight_per_case || null,
+      weight_per_case_unit: material?.weight_per_case_unit || 'lb',
       notes: material?.notes || '',
     },
   });
@@ -60,18 +64,33 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
   const watchPurchaseCost = form.watch('purchase_cost');
   const watchPurchaseQuantity = form.watch('purchase_quantity');
   const watchUnitsPerCase = form.watch('units_per_case');
+  const watchWeightPerCase = form.watch('weight_per_case');
+  const watchWeightPerCaseUnit = form.watch('weight_per_case_unit');
 
-  const showUnitsPerCase = ['case', 'pack', 'bag', 'box'].includes(watchPurchaseUnit);
+  const isCaseUnit = ['case', 'pack', 'bag', 'box'].includes(watchPurchaseUnit);
+  const isWeightBasedCategory = WEIGHT_BASED_CATEGORIES.includes(watchCategory);
+  
+  // Show weight fields for case units with weight-based categories (like Wax)
+  const showWeightPerCase = isCaseUnit && isWeightBasedCategory;
+  // Show units per case for case units with non-weight-based categories (like packaging)
+  const showUnitsPerCase = isCaseUnit && !isWeightBasedCategory;
 
   const calculatedCostPerUnit = calculateCostPerUnit(
     watchPurchaseCost || 0,
     watchPurchaseQuantity || 1,
     watchPurchaseUnit || 'each',
     watchUnitsPerCase || null,
-    watchCategory || ''
+    watchCategory || '',
+    watchWeightPerCase || null,
+    watchWeightPerCaseUnit || null
   );
 
-  const costPerUnitLabel = getCostPerUnitLabel(watchPurchaseUnit || 'each', watchCategory || '');
+  const costPerUnitLabel = getCostPerUnitLabel(
+    watchPurchaseUnit || 'each', 
+    watchCategory || '',
+    watchWeightPerCase || null,
+    watchWeightPerCaseUnit || null
+  );
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     onSubmit({
@@ -82,6 +101,8 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
       purchase_unit: values.purchase_unit,
       notes: values.notes || null,
       units_per_case: showUnitsPerCase ? values.units_per_case || null : null,
+      weight_per_case: showWeightPerCase ? values.weight_per_case || null : null,
+      weight_per_case_unit: showWeightPerCase && values.weight_per_case ? values.weight_per_case_unit || null : null,
     });
   };
 
@@ -210,6 +231,66 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
               </FormItem>
             )}
           />
+        )}
+
+        {showWeightPerCase && (
+          <div className="grid gap-6 sm:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="weight_per_case"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Weight per {watchPurchaseUnit}</FormLabel>
+                  <FormControl>
+                    <Input 
+                      type="number" 
+                      step="0.1" 
+                      min="0.1" 
+                      placeholder="e.g., 45"
+                      {...field} 
+                      value={field.value ?? ''} 
+                      onChange={e => field.onChange(e.target.value ? Number(e.target.value) : null)}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    Total weight contained in one {watchPurchaseUnit}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="weight_per_case_unit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Weight Unit</FormLabel>
+                  <Select 
+                    onValueChange={field.onChange} 
+                    value={field.value ?? 'lb'}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select unit" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {WEIGHT_UNITS.map((unit) => (
+                        <SelectItem key={unit} value={unit}>
+                          {unit}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Unit of weight (lb, oz, grams)
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
         )}
 
         {/* Calculated cost per unit display */}

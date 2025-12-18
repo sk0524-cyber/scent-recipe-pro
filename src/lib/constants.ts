@@ -50,6 +50,19 @@ export const UNIT_CONVERSIONS: Record<string, Record<string, number>> = {
   ml: { oz: 1/29.5735, grams: 1 }
 };
 
+// Weight units for case purchases
+export const WEIGHT_UNITS = ['lb', 'oz', 'grams'] as const;
+export type WeightUnit = typeof WEIGHT_UNITS[number];
+
+// Categories that can have weight-based case pricing (e.g., wax sold by lb per case)
+export const WEIGHT_BASED_CATEGORIES = [
+  'Wax',
+  'Fragrance Oil',
+  'Reed Diffuser Base',
+  'Room Spray Base',
+  'Incense Base'
+];
+
 // Categories that typically use "per case/pack" pricing
 export const CASE_UNIT_CATEGORIES = [
   'Candle Vessel',
