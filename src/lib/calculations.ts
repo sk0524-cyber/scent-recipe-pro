@@ -1,0 +1,262 @@
+import { UNIT_CONVERSIONS, CASE_UNIT_CATEGORIES } from './constants';
+
+export interface Material {
+  id: string;
+  name: string;
+  category: string;
+  purchase_cost: number;
+  purchase_quantity: number;
+  purchase_unit: string;
+  units_per_case: number | null;
+  cost_per_unit: number;
+  notes: string | null;
+}
+
+export interface FormulaItem {
+  id?: string;
+  material_id: string;
+  percentage: number;
+  slot_type?: string;
+  material?: Material;
+}
+
+export interface ComponentItem {
+  id?: string;
+  material_id: string;
+  quantity_per_unit: number;
+  material?: Material;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  product_type: string;
+  units_per_batch: number;
+  fill_weight_per_unit: number;
+  fill_unit: string;
+  labor_rate_per_hour: number;
+  labor_hours_per_batch: number;
+  shipping_overhead_per_batch: number;
+  retail_markup: number;
+  wholesale_markup: number;
+  materials_cost_per_unit: number;
+  packaging_cost_per_unit: number;
+  labor_cost_per_unit: number;
+  shipping_cost_per_unit: number;
+  total_cogs_per_unit: number;
+  wholesale_price: number;
+  retail_price: number;
+  formula_items?: FormulaItem[];
+  component_items?: ComponentItem[];
+}
+
+/**
+ * Calculate cost per usable unit based on purchase details
+ */
+export function calculateCostPerUnit(
+  purchaseCost: number,
+  purchaseQuantity: number,
+  purchaseUnit: string,
+  unitsPerCase: number | null,
+  category: string
+): number {
+  // For case/pack/bag items, divide by units per case
+  if (['case', 'pack', 'bag', 'box'].includes(purchaseUnit) && unitsPerCase && unitsPerCase > 0) {
+    return purchaseCost / unitsPerCase;
+  }
+  
+  // For weight/volume items, calculate cost per single unit
+  if (purchaseQuantity > 0) {
+    return purchaseCost / purchaseQuantity;
+  }
+  
+  return 0;
+}
+
+/**
+ * Get the display unit for a material's cost per unit
+ */
+export function getCostPerUnitLabel(purchaseUnit: string, category: string): string {
+  if (['case', 'pack', 'bag', 'box'].includes(purchaseUnit)) {
+    return 'per piece';
+  }
+  
+  // For weight-based items, show cost per oz
+  if (['lb'].includes(purchaseUnit)) {
+    return 'per oz';
+  }
+  
+  return `per ${purchaseUnit}`;
+}
+
+/**
+ * Calculate formula costs for a product
+ */
+export function calculateFormulaCosts(
+  formulaItems: FormulaItem[],
+  totalBatchWeight: number,
+  unitsPerBatch: number,
+  materials: Material[]
+): { 
+  itemCosts: Array<{
+    material: Material;
+    percentage: number;
+    amountPerBatch: number;
+    costPerBatch: number;
+    costPerUnit: number;
+  }>;
+  totalMaterialsCostPerUnit: number;
+} {
+  const itemCosts = formulaItems
+    .filter(item => item.percentage > 0)
+    .map(item => {
+      const material = materials.find(m => m.id === item.material_id);
+      if (!material) return null;
+
+      // Calculate amount per batch
+      const amountPerBatch = (item.percentage / 100) * totalBatchWeight;
+      
+      // Get cost per oz (convert if needed)
+      let costPerOz = material.cost_per_unit;
+      if (material.purchase_unit === 'lb') {
+        costPerOz = material.cost_per_unit / 16; // Convert $/lb to $/oz
+      }
+      
+      // Cost per batch
+      const costPerBatch = amountPerBatch * costPerOz;
+      
+      // Cost per unit
+      const costPerUnit = unitsPerBatch > 0 ? costPerBatch / unitsPerBatch : 0;
+
+      return {
+        material,
+        percentage: item.percentage,
+        amountPerBatch,
+        costPerBatch,
+        costPerUnit
+      };
+    })
+    .filter(Boolean) as Array<{
+      material: Material;
+      percentage: number;
+      amountPerBatch: number;
+      costPerBatch: number;
+      costPerUnit: number;
+    }>;
+
+  const totalMaterialsCostPerUnit = itemCosts.reduce((sum, item) => sum + item.costPerUnit, 0);
+
+  return { itemCosts, totalMaterialsCostPerUnit };
+}
+
+/**
+ * Calculate component costs for a product
+ */
+export function calculateComponentCosts(
+  componentItems: ComponentItem[],
+  materials: Material[]
+): {
+  itemCosts: Array<{
+    material: Material;
+    quantityPerUnit: number;
+    costPerUnit: number;
+  }>;
+  totalPackagingCostPerUnit: number;
+} {
+  const itemCosts = componentItems
+    .filter(item => item.quantity_per_unit > 0)
+    .map(item => {
+      const material = materials.find(m => m.id === item.material_id);
+      if (!material) return null;
+
+      const costPerUnit = item.quantity_per_unit * material.cost_per_unit;
+
+      return {
+        material,
+        quantityPerUnit: item.quantity_per_unit,
+        costPerUnit
+      };
+    })
+    .filter(Boolean) as Array<{
+      material: Material;
+      quantityPerUnit: number;
+      costPerUnit: number;
+    }>;
+
+  const totalPackagingCostPerUnit = itemCosts.reduce((sum, item) => sum + item.costPerUnit, 0);
+
+  return { itemCosts, totalPackagingCostPerUnit };
+}
+
+/**
+ * Calculate labor cost per unit
+ */
+export function calculateLaborCostPerUnit(
+  laborRatePerHour: number,
+  laborHoursPerBatch: number,
+  unitsPerBatch: number
+): number {
+  if (unitsPerBatch <= 0) return 0;
+  const laborCostPerBatch = laborRatePerHour * laborHoursPerBatch;
+  return laborCostPerBatch / unitsPerBatch;
+}
+
+/**
+ * Calculate shipping/overhead cost per unit
+ */
+export function calculateShippingCostPerUnit(
+  shippingOverheadPerBatch: number,
+  unitsPerBatch: number
+): number {
+  if (unitsPerBatch <= 0) return 0;
+  return shippingOverheadPerBatch / unitsPerBatch;
+}
+
+/**
+ * Calculate total COGS per unit
+ */
+export function calculateTotalCOGS(
+  materialsCostPerUnit: number,
+  packagingCostPerUnit: number,
+  laborCostPerUnit: number,
+  shippingCostPerUnit: number
+): number {
+  return materialsCostPerUnit + packagingCostPerUnit + laborCostPerUnit + shippingCostPerUnit;
+}
+
+/**
+ * Calculate wholesale price with markup
+ */
+export function calculateWholesalePrice(cogs: number, markupPercent: number): number {
+  const price = cogs * (1 + markupPercent / 100);
+  return roundToNearestHalf(price);
+}
+
+/**
+ * Calculate retail price with markup
+ */
+export function calculateRetailPrice(cogs: number, markupPercent: number): number {
+  const price = cogs * (1 + markupPercent / 100);
+  return roundToNearestHalf(price);
+}
+
+/**
+ * Round to nearest $0.50
+ */
+export function roundToNearestHalf(value: number): number {
+  return Math.round(value * 2) / 2;
+}
+
+/**
+ * Format currency
+ */
+export function formatCurrency(value: number, decimals: number = 2): string {
+  return `$${value.toFixed(decimals)}`;
+}
+
+/**
+ * Format percentage
+ */
+export function formatPercentage(value: number): string {
+  return `${value.toFixed(1)}%`;
+}
