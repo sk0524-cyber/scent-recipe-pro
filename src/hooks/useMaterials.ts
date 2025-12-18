@@ -11,6 +11,8 @@ export interface Material {
   purchase_quantity: number;
   purchase_unit: string;
   units_per_case: number | null;
+  weight_per_case: number | null;
+  weight_per_case_unit: string | null;
   cost_per_unit: number;
   notes: string | null;
   created_at: string;
@@ -24,6 +26,8 @@ export interface MaterialFormData {
   purchase_quantity: number;
   purchase_unit: string;
   units_per_case: number | null;
+  weight_per_case: number | null;
+  weight_per_case_unit: string | null;
   notes: string | null;
 }
 
@@ -51,7 +55,9 @@ export function useMaterials() {
         formData.purchase_quantity,
         formData.purchase_unit,
         formData.units_per_case,
-        formData.category
+        formData.category,
+        formData.weight_per_case,
+        formData.weight_per_case_unit
       );
 
       const { data, error } = await supabase
@@ -90,7 +96,9 @@ export function useMaterials() {
         formData.purchase_quantity,
         formData.purchase_unit,
         formData.units_per_case,
-        formData.category
+        formData.category,
+        formData.weight_per_case,
+        formData.weight_per_case_unit
       );
 
       const { data, error } = await supabase

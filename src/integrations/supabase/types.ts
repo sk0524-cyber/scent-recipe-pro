@@ -27,6 +27,8 @@ export type Database = {
           purchase_unit: string
           units_per_case: number | null
           updated_at: string
+          weight_per_case: number | null
+          weight_per_case_unit: string | null
         }
         Insert: {
           category: string
@@ -40,6 +42,8 @@ export type Database = {
           purchase_unit: string
           units_per_case?: number | null
           updated_at?: string
+          weight_per_case?: number | null
+          weight_per_case_unit?: string | null
         }
         Update: {
           category?: string
@@ -53,6 +57,8 @@ export type Database = {
           purchase_unit?: string
           units_per_case?: number | null
           updated_at?: string
+          weight_per_case?: number | null
+          weight_per_case_unit?: string | null
         }
         Relationships: []
       }
