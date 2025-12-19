@@ -184,7 +184,7 @@ export function ProductCalculator({
     const wholesalePrice = calculateWholesalePrice(totalCOGS, watchAll.wholesale_markup);
     const retailPrice = calculateRetailPrice(totalCOGS, watchAll.retail_markup);
 
-    const totalPercentage = formulaItems.reduce((sum, item) => sum + (item.percentage || 0), 0);
+    const totalPercentage = formulaItems.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
 
     return {
       totalBatchWeight,
