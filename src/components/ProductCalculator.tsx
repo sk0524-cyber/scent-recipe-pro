@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { PRODUCT_TYPES, FILL_UNITS, FORMULA_CATEGORIES, COMPONENT_CATEGORIES } from '@/lib/constants';
 import { Material } from '@/hooks/useMaterials';
@@ -364,13 +365,65 @@ export function ProductCalculator({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            {calculations.totalPercentage !== 100 && calculations.totalPercentage > 0 && (
-              <Alert variant="destructive" className="bg-destructive/10 border-destructive/30">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription>
-                  Formula totals {calculations.totalPercentage.toFixed(1)}% — should be 100%
-                </AlertDescription>
-              </Alert>
+            {/* Formula percentage progress bar */}
+            {calculations.totalPercentage > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Formula Total</span>
+                  <span className={`font-medium ${
+                    calculations.totalPercentage === 100 
+                      ? 'text-green-600 dark:text-green-400' 
+                      : calculations.totalPercentage > 100 
+                        ? 'text-orange-600 dark:text-orange-400' 
+                        : 'text-destructive'
+                  }`}>
+                    {calculations.totalPercentage.toFixed(1)}%
+                    {calculations.totalPercentage !== 100 && (
+                      <span className="ml-1 text-xs font-normal">
+                        ({calculations.totalPercentage < 100 ? `${(100 - calculations.totalPercentage).toFixed(1)}% remaining` : `${(calculations.totalPercentage - 100).toFixed(1)}% over`})
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <div className="relative">
+                  <Progress 
+                    value={Math.min(calculations.totalPercentage, 100)} 
+                    className={`h-2 ${
+                      calculations.totalPercentage === 100 
+                        ? '[&>div]:bg-green-500' 
+                        : calculations.totalPercentage > 100 
+                          ? '[&>div]:bg-orange-500' 
+                          : '[&>div]:bg-destructive'
+                    }`}
+                  />
+                  {calculations.totalPercentage > 100 && (
+                    <div 
+                      className="absolute top-0 left-0 h-2 bg-orange-500/30 rounded-full"
+                      style={{ width: `${Math.min((calculations.totalPercentage / 100) * 100, 100)}%` }}
+                    />
+                  )}
+                </div>
+                {calculations.totalPercentage !== 100 && (
+                  <div className={`flex items-center gap-2 text-xs ${
+                    calculations.totalPercentage > 100 
+                      ? 'text-orange-600 dark:text-orange-400' 
+                      : 'text-destructive'
+                  }`}>
+                    <AlertTriangle className="h-3 w-3" />
+                    <span>
+                      {calculations.totalPercentage < 100 
+                        ? 'Add more ingredients to reach 100%' 
+                        : 'Reduce percentages to equal 100%'}
+                    </span>
+                  </div>
+                )}
+                {calculations.totalPercentage === 100 && (
+                  <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+                    <CheckCircle2 className="h-3 w-3" />
+                    <span>Formula is complete</span>
+                  </div>
+                )}
+              </div>
             )}
 
             {isCandle ? (
