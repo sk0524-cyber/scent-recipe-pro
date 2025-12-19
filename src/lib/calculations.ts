@@ -291,3 +291,12 @@ export function formatCurrency(value: number, decimals: number = 2): string {
 export function formatPercentage(value: number): string {
   return `${value.toFixed(1)}%`;
 }
+
+/**
+ * Calculate profit margin percentage
+ * Formula: ((sellingPrice - cogs) / sellingPrice) * 100
+ */
+export function calculateProfitMargin(sellingPrice: number, cogs: number): number {
+  if (sellingPrice <= 0) return 0;
+  return ((sellingPrice - cogs) / sellingPrice) * 100;
+}

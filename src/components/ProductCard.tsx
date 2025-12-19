@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Product } from '@/hooks/useProducts';
-import { formatCurrency } from '@/lib/calculations';
+import { formatCurrency, calculateProfitMargin, formatPercentage } from '@/lib/calculations';
 
 interface ProductCardProps {
   product: Product;
@@ -100,11 +100,17 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
             <p className="font-display text-lg font-semibold text-secondary-foreground">
               {formatCurrency(product.wholesale_price)}
             </p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+              {formatPercentage(calculateProfitMargin(product.wholesale_price ?? 0, product.total_cogs_per_unit ?? 0))} margin
+            </p>
           </div>
           <div className="p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">Retail</p>
             <p className="font-display text-lg font-semibold text-primary">
               {formatCurrency(product.retail_price)}
+            </p>
+            <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
+              {formatPercentage(calculateProfitMargin(product.retail_price ?? 0, product.total_cogs_per_unit ?? 0))} margin
             </p>
           </div>
         </div>
