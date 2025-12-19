@@ -1,7 +1,19 @@
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, MoreHorizontal } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { Material } from '@/hooks/useMaterials';
 import { formatCurrency, getCostPerUnitLabel } from '@/lib/calculations';
 
@@ -59,9 +71,18 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
                 {material.category}
               </Badge>
             </div>
-            <h3 className="font-display text-lg font-semibold text-foreground truncate">
-              {material.name}
-            </h3>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h3 className="font-display text-lg font-semibold text-foreground truncate cursor-default">
+                    {material.name}
+                  </h3>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{material.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
             <div className="mt-3 space-y-1 text-sm text-muted-foreground">
               <p>
                 <span className="font-medium">Purchase:</span>{' '}
@@ -78,24 +99,31 @@ export function MaterialCard({ material, onEdit, onDelete }: MaterialCardProps) 
               </p>
             )}
           </div>
-          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-smooth">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onEdit(material)}
-              className="h-8 w-8"
-            >
-              <Edit2 className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onDelete(material.id)}
-              className="h-8 w-8 text-destructive hover:text-destructive"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 shrink-0"
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                <span className="sr-only">Open menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onEdit(material)}>
+                <Edit2 className="mr-2 h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => onDelete(material.id)}
+                className="text-destructive focus:text-destructive"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardContent>
     </Card>
