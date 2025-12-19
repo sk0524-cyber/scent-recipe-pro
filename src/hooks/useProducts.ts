@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Product {
   id: string;
@@ -23,6 +24,7 @@ export interface Product {
   retail_price: number;
   created_at: string;
   updated_at: string;
+  user_id: string | null;
 }
 
 export interface FormulaItem {
@@ -76,9 +78,10 @@ export interface ProductFormData {
 
 export function useProducts() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: products = [], isLoading, error } = useQuery({
-    queryKey: ['products'],
+    queryKey: ['products', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('products')
@@ -87,7 +90,8 @@ export function useProducts() {
 
       if (error) throw error;
       return data as Product[];
-    }
+    },
+    enabled: !!user
   });
 
   const getProductWithItems = async (id: string): Promise<ProductWithItems | null> => {
@@ -118,11 +122,16 @@ export function useProducts() {
 
   const createProduct = useMutation({
     mutationFn: async (formData: ProductFormData) => {
+      if (!user) throw new Error('Not authenticated');
+
       const { formula_items, component_items, ...productData } = formData;
 
       const { data: product, error: productError } = await supabase
         .from('products')
-        .insert(productData)
+        .insert({
+          ...productData,
+          user_id: user.id
+        })
         .select()
         .single();
 
@@ -262,7 +271,7 @@ export function useProducts() {
       const productWithItems = await getProductWithItems(id);
       if (!productWithItems) throw new Error('Product not found');
 
-      const { id: _, created_at, updated_at, formula_items, component_items, ...productData } = productWithItems;
+      const { id: _, created_at, updated_at, user_id, formula_items, component_items, ...productData } = productWithItems;
       
       const newFormData: ProductFormData = {
         ...productData,

@@ -1,6 +1,13 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Package, Calculator } from 'lucide-react';
+import { Home, Package, Calculator, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
+import { Button } from '@/components/ui/button';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,6 +21,7 @@ const navItems = [
 
 export function Layout({ children }: LayoutProps) {
   const location = useLocation();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-background">
@@ -29,23 +37,43 @@ export function Layout({ children }: LayoutProps) {
             </span>
           </Link>
 
-          <nav className="flex items-center gap-1">
-            {navItems.map(({ href, icon: Icon, label }) => (
-              <Link
-                key={href}
-                to={href}
-                className={cn(
-                  'flex items-center gap-2 rounded-lg px-4 py-2 font-body text-sm font-medium transition-smooth',
-                  location.pathname === href
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                )}
-              >
-                <Icon className="h-4 w-4" />
-                <span className="hidden sm:inline">{label}</span>
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="flex items-center gap-1">
+              {navItems.map(({ href, icon: Icon, label }) => (
+                <Link
+                  key={href}
+                  to={href}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg px-4 py-2 font-body text-sm font-medium transition-smooth',
+                    location.pathname === href
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="hidden sm:inline">{label}</span>
+                </Link>
+              ))}
+            </nav>
+
+            {user && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={signOut}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Sign out ({user.email})</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+          </div>
         </div>
       </header>
 

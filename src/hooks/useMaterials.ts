@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { calculateCostPerUnit } from '@/lib/calculations';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Material {
   id: string;
@@ -17,6 +18,7 @@ export interface Material {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  user_id: string | null;
 }
 
 export interface MaterialFormData {
@@ -33,9 +35,10 @@ export interface MaterialFormData {
 
 export function useMaterials() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: materials = [], isLoading, error } = useQuery({
-    queryKey: ['materials'],
+    queryKey: ['materials', user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('materials')
@@ -45,11 +48,14 @@ export function useMaterials() {
 
       if (error) throw error;
       return data as Material[];
-    }
+    },
+    enabled: !!user
   });
 
   const createMaterial = useMutation({
     mutationFn: async (formData: MaterialFormData) => {
+      if (!user) throw new Error('Not authenticated');
+
       const costPerUnit = calculateCostPerUnit(
         formData.purchase_cost,
         formData.purchase_quantity,
@@ -64,7 +70,8 @@ export function useMaterials() {
         .from('materials')
         .insert({
           ...formData,
-          cost_per_unit: costPerUnit
+          cost_per_unit: costPerUnit,
+          user_id: user.id
         })
         .select()
         .single();
