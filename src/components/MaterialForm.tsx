@@ -268,7 +268,7 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
                   <FormLabel>Weight Unit</FormLabel>
                   <Select 
                     onValueChange={field.onChange} 
-                    value={field.value ?? 'lb'}
+                    value={field.value || 'lb'}
                   >
                     <FormControl>
                       <SelectTrigger>
