@@ -65,8 +65,8 @@ export function calculateCostPerUnit(
   weightPerCase: number | null = null,
   weightPerCaseUnit: string | null = null
 ): number {
-  // For case/pack/bag/jug items with weight (e.g., wax sold as 45lb/case, fragrance oil as 30lb/jug)
-  if (['case', 'pack', 'bag', 'box', 'jug'].includes(purchaseUnit) && weightPerCase && weightPerCase > 0 && weightPerCaseUnit) {
+  // For case/pack/bag/jug/bottle items with weight (e.g., wax sold as 45lb/case, fragrance oil as 30lb/jug)
+  if (['case', 'pack', 'bag', 'box', 'jug', 'bottle'].includes(purchaseUnit) && weightPerCase && weightPerCase > 0 && weightPerCaseUnit) {
     // Calculate cost per weight unit first
     const costPerWeightUnit = purchaseCost / weightPerCase;
     
@@ -80,8 +80,8 @@ export function calculateCostPerUnit(
     return costPerWeightUnit;
   }
   
-  // For case/pack/bag/jug items with piece count, divide by units per case
-  if (['case', 'pack', 'bag', 'box', 'jug'].includes(purchaseUnit) && unitsPerCase && unitsPerCase > 0) {
+  // For case/pack/bag/jug/bottle items with piece count, divide by units per case
+  if (['case', 'pack', 'bag', 'box', 'jug', 'bottle'].includes(purchaseUnit) && unitsPerCase && unitsPerCase > 0) {
     return purchaseCost / unitsPerCase;
   }
   
@@ -102,13 +102,13 @@ export function getCostPerUnitLabel(
   weightPerCase: number | null = null,
   weightPerCaseUnit: string | null = null
 ): string {
-  // For case/jug with weight (like wax, fragrance oil), show per oz
-  if (['case', 'pack', 'bag', 'box', 'jug'].includes(purchaseUnit) && weightPerCase && weightPerCaseUnit) {
+  // For case/jug/bottle with weight (like wax, fragrance oil), show per oz
+  if (['case', 'pack', 'bag', 'box', 'jug', 'bottle'].includes(purchaseUnit) && weightPerCase && weightPerCaseUnit) {
     return 'per oz';
   }
   
-  // For case/pack/jug with piece count
-  if (['case', 'pack', 'bag', 'box', 'jug'].includes(purchaseUnit)) {
+  // For case/pack/jug/bottle with piece count
+  if (['case', 'pack', 'bag', 'box', 'jug', 'bottle'].includes(purchaseUnit)) {
     return 'per piece';
   }
   
