@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Package, Calculator, ArrowRight, TrendingUp, DollarSign, Layers } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { ProductCard } from '@/components/ProductCard';
 import { formatCurrency } from '@/lib/calculations';
 
 const Index = () => {
+  const navigate = useNavigate();
   const { materials, isLoading: materialsLoading } = useMaterials();
   const { products, isLoading: productsLoading, duplicateProduct, deleteProduct } = useProducts();
 
@@ -163,7 +164,7 @@ const Index = () => {
               <ProductCard
                 key={product.id}
                 product={product}
-                onEdit={() => {}}
+                onEdit={() => navigate(`/calculator?edit=${product.id}`)}
                 onDuplicate={(id) => duplicateProduct.mutate(id)}
                 onDelete={(id) => deleteProduct.mutate(id)}
               />

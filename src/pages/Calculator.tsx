@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Plus, ArrowLeft, Download } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,12 +34,26 @@ export default function Calculator() {
     deleteProduct,
   } = useProducts();
 
+  const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
   const [editingProduct, setEditingProduct] = useState<ProductWithItems | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   const isLoading = materialsLoading || productsLoading;
+
+  // Handle edit from URL query parameter
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    if (editId && products.length > 0 && !showForm && !isLoadingProduct) {
+      const productToEdit = products.find(p => p.id === editId);
+      if (productToEdit) {
+        handleEdit(productToEdit);
+        // Clear the query parameter
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, products, showForm, isLoadingProduct]);
 
   const handleCreateNew = () => {
     setEditingProduct(null);
