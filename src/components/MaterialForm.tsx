@@ -67,7 +67,7 @@ export function MaterialForm({ material, onSubmit, onCancel, isSubmitting }: Mat
   const watchWeightPerCase = form.watch('weight_per_case');
   const watchWeightPerCaseUnit = form.watch('weight_per_case_unit');
 
-  const isCaseUnit = ['case', 'pack', 'bag', 'box', 'jug', 'bottle'].includes(watchPurchaseUnit);
+  const isCaseUnit = ['case', 'pack', 'bag', 'box', 'jug', 'bottle', 'drum'].includes(watchPurchaseUnit);
   const isWeightBasedCategory = WEIGHT_BASED_CATEGORIES.includes(watchCategory);
   
   // Show weight fields for case units with weight-based categories (like Wax)

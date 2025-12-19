@@ -26,7 +26,8 @@ export const PURCHASE_UNITS = [
   'bag',
   'box',
   'jug',
-  'bottle'
+  'bottle',
+  'drum'
 ] as const;
 
 export const PRODUCT_TYPES = [
