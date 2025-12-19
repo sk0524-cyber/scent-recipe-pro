@@ -27,6 +27,7 @@ export type Database = {
           purchase_unit: string
           units_per_case: number | null
           updated_at: string
+          user_id: string | null
           weight_per_case: number | null
           weight_per_case_unit: string | null
         }
@@ -42,6 +43,7 @@ export type Database = {
           purchase_unit: string
           units_per_case?: number | null
           updated_at?: string
+          user_id?: string | null
           weight_per_case?: number | null
           weight_per_case_unit?: string | null
         }
@@ -57,6 +59,7 @@ export type Database = {
           purchase_unit?: string
           units_per_case?: number | null
           updated_at?: string
+          user_id?: string | null
           weight_per_case?: number | null
           weight_per_case_unit?: string | null
         }
@@ -163,6 +166,7 @@ export type Database = {
           total_cogs_per_unit: number | null
           units_per_batch: number
           updated_at: string
+          user_id: string | null
           wholesale_markup: number | null
           wholesale_price: number | null
         }
@@ -185,6 +189,7 @@ export type Database = {
           total_cogs_per_unit?: number | null
           units_per_batch?: number
           updated_at?: string
+          user_id?: string | null
           wholesale_markup?: number | null
           wholesale_price?: number | null
         }
@@ -207,6 +212,7 @@ export type Database = {
           total_cogs_per_unit?: number | null
           units_per_batch?: number
           updated_at?: string
+          user_id?: string | null
           wholesale_markup?: number | null
           wholesale_price?: number | null
         }
