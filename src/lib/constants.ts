@@ -24,7 +24,8 @@ export const PURCHASE_UNITS = [
   'case',
   'pack',
   'bag',
-  'box'
+  'box',
+  'jug'
 ] as const;
 
 export const PRODUCT_TYPES = [
