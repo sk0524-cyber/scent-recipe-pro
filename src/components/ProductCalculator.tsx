@@ -385,14 +385,14 @@ export function ProductCalculator({
                       render={({ field: selectField }) => (
                         <FormItem>
                           <FormLabel>Wax {index + 1} {index > 0 && '(optional)'}</FormLabel>
-                          <Select onValueChange={selectField.onChange} value={selectField.value}>
+                          <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select wax" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="__none__">None</SelectItem>
                               {waxMaterials.map((m) => (
                                 <SelectItem key={m.id} value={m.id}>
                                   {m.name}
@@ -429,14 +429,14 @@ export function ProductCalculator({
                       render={({ field: selectField }) => (
                         <FormItem>
                           <FormLabel>Fragrance Oil</FormLabel>
-                          <Select onValueChange={selectField.onChange} value={selectField.value}>
+                          <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select fragrance" />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">None</SelectItem>
+                              <SelectItem value="__none__">None</SelectItem>
                               {fragranceMaterials.map((m) => (
                                 <SelectItem key={m.id} value={m.id}>
                                   {m.name}
