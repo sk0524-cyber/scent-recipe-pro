@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -56,6 +56,7 @@ const formSchema = z.object({
   units_per_batch: z.coerce.number().min(1, 'Must produce at least 1 unit'),
   fill_weight_per_unit: z.coerce.number().min(0.001, 'Fill weight must be greater than 0'),
   fill_unit: z.string().min(1, 'Fill unit is required'),
+  reed_stick_count: z.coerce.number().min(0).optional(),
   labor_rate_per_hour: z.coerce.number().min(0),
   labor_hours_per_batch: z.coerce.number().min(0),
   shipping_overhead_per_batch: z.coerce.number().min(0),
@@ -73,6 +74,84 @@ interface ProductCalculatorProps {
   isSubmitting?: boolean;
 }
 
+// Helper to get product-specific guidance
+function getProductGuidance(productType: string): { formula: string; components: string; fillLabel: string } {
+  switch (productType) {
+    case 'Candle':
+      return {
+        formula: 'Blend up to 3 waxes (totaling ~90-92%), then add fragrance oil (8-10% typical)',
+        components: 'Typical components: vessel, lid, wick, labels',
+        fillLabel: 'Fill Weight (oz/g)',
+      };
+    case 'Wax Melt':
+      return {
+        formula: 'Single wax (85-90%) + fragrance oil (10-15% typical)',
+        components: 'Typical components: clamshell/mold, labels',
+        fillLabel: 'Fill Weight (oz/g)',
+      };
+    case 'Reed Diffuser':
+      return {
+        formula: 'Base (75%) + fragrance oil (25% max per IFRA regulations)',
+        components: 'Typical components: vessel, lid, reed sticks, labels',
+        fillLabel: 'Fill Volume (oz/ml)',
+      };
+    case 'Room Spray':
+      return {
+        formula: 'Combine base, water, alcohol, and fragrance as needed (total 100%)',
+        components: 'Typical components: spray bottle, cap, labels',
+        fillLabel: 'Fill Volume (oz/ml)',
+      };
+    case 'Incense':
+      return {
+        formula: 'Base + fragrance for your bundle',
+        components: 'Typical components: product box, labels',
+        fillLabel: 'Units per Bundle',
+      };
+    default:
+      return {
+        formula: 'Define your recipe in percentages. Total should equal 100%.',
+        components: 'Add per-piece items like vessels, packaging, labels, etc.',
+        fillLabel: 'Fill Amount',
+      };
+  }
+}
+
+// Helper to get default fill units based on product type
+function getDefaultFillUnits(productType: string): string[] {
+  switch (productType) {
+    case 'Candle':
+    case 'Wax Melt':
+      return ['oz', 'grams'];
+    case 'Reed Diffuser':
+    case 'Room Spray':
+      return ['oz', 'ml'];
+    case 'Incense':
+      return ['bundle'];
+    default:
+      return ['oz', 'ml', 'grams', 'bundle'];
+  }
+}
+
+// Helper to get default formula items based on product type
+function getDefaultFormulaItems(productType: string) {
+  switch (productType) {
+    case 'Candle':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'wax1' },
+        { material_id: '', percentage: 0, slot_type: 'wax2' },
+        { material_id: '', percentage: 0, slot_type: 'wax3' },
+        { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    case 'Wax Melt':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'wax' },
+        { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    default:
+      return [];
+  }
+}
+
 export function ProductCalculator({
   product,
   materials,
@@ -80,14 +159,17 @@ export function ProductCalculator({
   onCancel,
   isSubmitting,
 }: ProductCalculatorProps) {
+  const initialProductType = product?.product_type || 'Candle';
+  
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: product?.name || '',
-      product_type: product?.product_type || 'Candle',
+      product_type: initialProductType,
       units_per_batch: product?.units_per_batch || 12,
       fill_weight_per_unit: product?.fill_weight_per_unit || 12,
       fill_unit: product?.fill_unit || 'oz',
+      reed_stick_count: product?.reed_stick_count || undefined,
       labor_rate_per_hour: product?.labor_rate_per_hour || 15,
       labor_hours_per_batch: product?.labor_hours_per_batch || 2,
       shipping_overhead_per_batch: product?.shipping_overhead_per_batch || 0,
@@ -97,12 +179,7 @@ export function ProductCalculator({
         material_id: item.material_id,
         percentage: item.percentage,
         slot_type: item.slot_type || undefined,
-      })) || [
-        { material_id: '', percentage: 0, slot_type: 'wax1' },
-        { material_id: '', percentage: 0, slot_type: 'wax2' },
-        { material_id: '', percentage: 0, slot_type: 'wax3' },
-        { material_id: '', percentage: 0, slot_type: 'fragrance' },
-      ],
+      })) || getDefaultFormulaItems(initialProductType),
       component_items: product?.component_items?.map(item => ({
         material_id: item.material_id,
         quantity_per_unit: item.quantity_per_unit,
@@ -114,6 +191,7 @@ export function ProductCalculator({
     fields: formulaFields,
     append: appendFormula,
     remove: removeFormula,
+    replace: replaceFormula,
   } = useFieldArray({
     control: form.control,
     name: 'formula_items',
@@ -129,7 +207,28 @@ export function ProductCalculator({
   });
 
   const watchAll = form.watch();
-  const isCandle = watchAll.product_type === 'Candle';
+  const productType = watchAll.product_type;
+  const isCandle = productType === 'Candle';
+  const isWaxMelt = productType === 'Wax Melt';
+  const isReedDiffuser = productType === 'Reed Diffuser';
+  const isFlexibleFormula = !isCandle && !isWaxMelt;
+  
+  const guidance = getProductGuidance(productType);
+  const availableFillUnits = getDefaultFillUnits(productType);
+
+  // Handle product type change - reset formula items appropriately
+  useEffect(() => {
+    if (!product) {
+      const newDefaults = getDefaultFormulaItems(productType);
+      replaceFormula(newDefaults);
+      
+      // Set appropriate default fill unit
+      const defaultUnits = getDefaultFillUnits(productType);
+      if (!defaultUnits.includes(watchAll.fill_unit)) {
+        form.setValue('fill_unit', defaultUnits[0]);
+      }
+    }
+  }, [productType, product, replaceFormula, form, watchAll.fill_unit]);
 
   // Filter materials by category for dropdowns
   const waxMaterials = materials.filter(m => m.category === 'Wax');
@@ -209,6 +308,7 @@ export function ProductCalculator({
       units_per_batch: values.units_per_batch,
       fill_weight_per_unit: values.fill_weight_per_unit,
       fill_unit: values.fill_unit,
+      reed_stick_count: values.product_type === 'Reed Diffuser' ? values.reed_stick_count : null,
       labor_rate_per_hour: values.labor_rate_per_hour,
       labor_hours_per_batch: values.labor_hours_per_batch,
       shipping_overhead_per_batch: values.shipping_overhead_per_batch,
@@ -237,6 +337,310 @@ export function ProductCalculator({
     };
     onSave(formData);
   };
+
+  // Render formula percentage progress
+  const renderFormulaProgress = () => {
+    if (calculations.totalPercentage === 0) return null;
+    
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between text-sm">
+          <span className="text-muted-foreground">Formula Total</span>
+          <span className={`font-medium ${
+            calculations.totalPercentage === 100 
+              ? 'text-green-600 dark:text-green-400' 
+              : calculations.totalPercentage > 100 
+                ? 'text-orange-600 dark:text-orange-400' 
+                : 'text-destructive'
+          }`}>
+            {calculations.totalPercentage.toFixed(1)}%
+            {calculations.totalPercentage !== 100 && (
+              <span className="ml-1 text-xs font-normal">
+                ({calculations.totalPercentage < 100 ? `${(100 - calculations.totalPercentage).toFixed(1)}% remaining` : `${(calculations.totalPercentage - 100).toFixed(1)}% over`})
+              </span>
+            )}
+          </span>
+        </div>
+        <div className="relative">
+          <Progress 
+            value={Math.min(calculations.totalPercentage, 100)} 
+            className={`h-2 ${
+              calculations.totalPercentage === 100 
+                ? '[&>div]:bg-green-500' 
+                : calculations.totalPercentage > 100 
+                  ? '[&>div]:bg-orange-500' 
+                  : '[&>div]:bg-destructive'
+            }`}
+          />
+        </div>
+        {calculations.totalPercentage !== 100 && (
+          <div className={`flex items-center gap-2 text-xs ${
+            calculations.totalPercentage > 100 
+              ? 'text-orange-600 dark:text-orange-400' 
+              : 'text-destructive'
+          }`}>
+            <AlertTriangle className="h-3 w-3" />
+            <span>
+              {calculations.totalPercentage < 100 
+                ? 'Add more ingredients to reach 100%' 
+                : 'Reduce percentages to equal 100%'}
+            </span>
+          </div>
+        )}
+        {calculations.totalPercentage === 100 && (
+          <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+            <CheckCircle2 className="h-3 w-3" />
+            <span>Formula is complete</span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Render candle formula (3 wax slots + 1 fragrance)
+  const renderCandleFormula = () => (
+    <div className="space-y-4">
+      {/* Wax slots */}
+      {formulaFields.slice(0, 3).map((field, index) => (
+        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px]">
+          <FormField
+            control={form.control}
+            name={`formula_items.${index}.material_id`}
+            render={({ field: selectField }) => (
+              <FormItem>
+                <FormLabel>Wax {index + 1} {index > 0 && '(optional)'}</FormLabel>
+                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select wax" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {waxMaterials.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`formula_items.${index}.percentage`}
+            render={({ field: inputField }) => (
+              <FormItem>
+                <FormLabel>%</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      ))}
+
+      <Separator />
+
+      {/* Fragrance slot */}
+      {formulaFields.length >= 4 && (
+        <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
+          <FormField
+            control={form.control}
+            name={`formula_items.3.material_id`}
+            render={({ field: selectField }) => (
+              <FormItem>
+                <FormLabel>Fragrance Oil</FormLabel>
+                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select fragrance" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {fragranceMaterials.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`formula_items.3.percentage`}
+            render={({ field: inputField }) => (
+              <FormItem>
+                <FormLabel>%</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // Render wax melt formula (1 wax + 1 fragrance)
+  const renderWaxMeltFormula = () => (
+    <div className="space-y-4">
+      {/* Single wax slot */}
+      {formulaFields.length >= 1 && (
+        <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
+          <FormField
+            control={form.control}
+            name={`formula_items.0.material_id`}
+            render={({ field: selectField }) => (
+              <FormItem>
+                <FormLabel>Wax</FormLabel>
+                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select wax" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {waxMaterials.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`formula_items.0.percentage`}
+            render={({ field: inputField }) => (
+              <FormItem>
+                <FormLabel>%</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+
+      <Separator />
+
+      {/* Fragrance slot */}
+      {formulaFields.length >= 2 && (
+        <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
+          <FormField
+            control={form.control}
+            name={`formula_items.1.material_id`}
+            render={({ field: selectField }) => (
+              <FormItem>
+                <FormLabel>Fragrance Oil</FormLabel>
+                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select fragrance" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="__none__">None</SelectItem>
+                    {fragranceMaterials.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`formula_items.1.percentage`}
+            render={({ field: inputField }) => (
+              <FormItem>
+                <FormLabel>%</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+      )}
+    </div>
+  );
+
+  // Render flexible formula (add/remove any materials)
+  const renderFlexibleFormula = () => (
+    <div className="space-y-4">
+      {formulaFields.map((field, index) => (
+        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px,auto]">
+          <FormField
+            control={form.control}
+            name={`formula_items.${index}.material_id`}
+            render={({ field: selectField }) => (
+              <FormItem>
+                <FormLabel className={index > 0 ? 'sr-only' : ''}>Material</FormLabel>
+                <Select onValueChange={selectField.onChange} value={selectField.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select material" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {formulaMaterials.map((m) => (
+                      <SelectItem key={m.id} value={m.id}>
+                        {m.name} ({m.category})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+          <FormField
+            control={form.control}
+            name={`formula_items.${index}.percentage`}
+            render={({ field: inputField }) => (
+              <FormItem>
+                <FormLabel className={index > 0 ? 'sr-only' : ''}>%</FormLabel>
+                <FormControl>
+                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="mt-8"
+            onClick={() => removeFormula(index)}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => appendFormula({ material_id: '', percentage: 0, slot_type: 'custom' })}
+      >
+        <Plus className="h-4 w-4 mr-2" />
+        Add Formula Item
+      </Button>
+    </div>
+  );
 
   return (
     <Form {...form}>
@@ -308,7 +712,7 @@ export function ProductCalculator({
                 name="fill_weight_per_unit"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Fill Weight/Volume per Unit</FormLabel>
+                    <FormLabel>{guidance.fillLabel}</FormLabel>
                     <FormControl>
                       <Input type="number" step="0.01" min="0" {...field} />
                     </FormControl>
@@ -324,14 +728,14 @@ export function ProductCalculator({
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Fill Unit</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select unit" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {FILL_UNITS.map((unit) => (
+                        {FILL_UNITS.filter(u => availableFillUnits.includes(u)).map((unit) => (
                           <SelectItem key={unit} value={unit}>
                             {unit}
                           </SelectItem>
@@ -342,6 +746,24 @@ export function ProductCalculator({
                   </FormItem>
                 )}
               />
+
+              {/* Reed Stick Count - only for Reed Diffusers */}
+              {isReedDiffuser && (
+                <FormField
+                  control={form.control}
+                  name="reed_stick_count"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Reed Sticks per Unit</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="0" step="1" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormDescription>Number of reed sticks included</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <div className="rounded-lg bg-secondary/50 p-4">
@@ -359,224 +781,16 @@ export function ProductCalculator({
         <Card>
           <CardHeader>
             <CardTitle>Formula (Percentages)</CardTitle>
-            <CardDescription>
-              Define your recipe in percentages. For candles, use the dedicated wax and fragrance slots.
-              Total should equal 100%.
-            </CardDescription>
+            <CardDescription>{guidance.formula}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Formula percentage progress bar */}
-            {calculations.totalPercentage > 0 && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">Formula Total</span>
-                  <span className={`font-medium ${
-                    calculations.totalPercentage === 100 
-                      ? 'text-green-600 dark:text-green-400' 
-                      : calculations.totalPercentage > 100 
-                        ? 'text-orange-600 dark:text-orange-400' 
-                        : 'text-destructive'
-                  }`}>
-                    {calculations.totalPercentage.toFixed(1)}%
-                    {calculations.totalPercentage !== 100 && (
-                      <span className="ml-1 text-xs font-normal">
-                        ({calculations.totalPercentage < 100 ? `${(100 - calculations.totalPercentage).toFixed(1)}% remaining` : `${(calculations.totalPercentage - 100).toFixed(1)}% over`})
-                      </span>
-                    )}
-                  </span>
-                </div>
-                <div className="relative">
-                  <Progress 
-                    value={Math.min(calculations.totalPercentage, 100)} 
-                    className={`h-2 ${
-                      calculations.totalPercentage === 100 
-                        ? '[&>div]:bg-green-500' 
-                        : calculations.totalPercentage > 100 
-                          ? '[&>div]:bg-orange-500' 
-                          : '[&>div]:bg-destructive'
-                    }`}
-                  />
-                  {calculations.totalPercentage > 100 && (
-                    <div 
-                      className="absolute top-0 left-0 h-2 bg-orange-500/30 rounded-full"
-                      style={{ width: `${Math.min((calculations.totalPercentage / 100) * 100, 100)}%` }}
-                    />
-                  )}
-                </div>
-                {calculations.totalPercentage !== 100 && (
-                  <div className={`flex items-center gap-2 text-xs ${
-                    calculations.totalPercentage > 100 
-                      ? 'text-orange-600 dark:text-orange-400' 
-                      : 'text-destructive'
-                  }`}>
-                    <AlertTriangle className="h-3 w-3" />
-                    <span>
-                      {calculations.totalPercentage < 100 
-                        ? 'Add more ingredients to reach 100%' 
-                        : 'Reduce percentages to equal 100%'}
-                    </span>
-                  </div>
-                )}
-                {calculations.totalPercentage === 100 && (
-                  <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-                    <CheckCircle2 className="h-3 w-3" />
-                    <span>Formula is complete</span>
-                  </div>
-                )}
-              </div>
-            )}
+            {renderFormulaProgress()}
 
-            {isCandle ? (
-              // Candle-specific formula with dedicated slots
-              <div className="space-y-4">
-                {/* Wax slots */}
-                {formulaFields.slice(0, 3).map((field, index) => (
-                  <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px]">
-                    <FormField
-                      control={form.control}
-                      name={`formula_items.${index}.material_id`}
-                      render={({ field: selectField }) => (
-                        <FormItem>
-                          <FormLabel>Wax {index + 1} {index > 0 && '(optional)'}</FormLabel>
-                          <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select wax" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="__none__">None</SelectItem>
-                              {waxMaterials.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`formula_items.${index}.percentage`}
-                      render={({ field: inputField }) => (
-                        <FormItem>
-                          <FormLabel>%</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                ))}
-
-                <Separator />
-
-                {/* Fragrance slot */}
-                {formulaFields.length >= 4 && (
-                  <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
-                    <FormField
-                      control={form.control}
-                      name={`formula_items.3.material_id`}
-                      render={({ field: selectField }) => (
-                        <FormItem>
-                          <FormLabel>Fragrance Oil</FormLabel>
-                          <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select fragrance" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="__none__">None</SelectItem>
-                              {fragranceMaterials.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`formula_items.3.percentage`}
-                      render={({ field: inputField }) => (
-                        <FormItem>
-                          <FormLabel>%</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
-                )}
-              </div>
-            ) : (
-              // Flexible formula for other product types
-              <div className="space-y-4">
-                {formulaFields.map((field, index) => (
-                  <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px,auto]">
-                    <FormField
-                      control={form.control}
-                      name={`formula_items.${index}.material_id`}
-                      render={({ field: selectField }) => (
-                        <FormItem>
-                          <FormLabel className={index > 0 ? 'sr-only' : ''}>Material</FormLabel>
-                          <Select onValueChange={selectField.onChange} value={selectField.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select material" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {formulaMaterials.map((m) => (
-                                <SelectItem key={m.id} value={m.id}>
-                                  {m.name} ({m.category})
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name={`formula_items.${index}.percentage`}
-                      render={({ field: inputField }) => (
-                        <FormItem>
-                          <FormLabel className={index > 0 ? 'sr-only' : ''}>%</FormLabel>
-                          <FormControl>
-                            <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="mt-8"
-                      onClick={() => removeFormula(index)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => appendFormula({ material_id: '', percentage: 0, slot_type: 'custom' })}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Formula Item
-                </Button>
-              </div>
-            )}
+            {/* Render appropriate formula UI based on product type */}
+            {isCandle && renderCandleFormula()}
+            {isWaxMelt && renderWaxMeltFormula()}
+            {isFlexibleFormula && renderFlexibleFormula()}
 
             {/* Formula cost breakdown */}
             {calculations.formulaCosts.length > 0 && (
@@ -586,7 +800,7 @@ export function ProductCalculator({
                   {calculations.formulaCosts.map((item, index) => (
                     <div key={index} className="flex justify-between">
                       <span className="text-muted-foreground">
-                        {item.material.name} ({item.percentage}% = {item.amountPerBatch.toFixed(2)} oz)
+                        {item.material.name} ({item.percentage}% = {item.amountPerBatch.toFixed(2)} {watchAll.fill_unit})
                       </span>
                       <span>{formatCurrency(item.costPerUnit, 4)}/unit</span>
                     </div>
@@ -606,9 +820,7 @@ export function ProductCalculator({
         <Card>
           <CardHeader>
             <CardTitle>Packaging & Components</CardTitle>
-            <CardDescription>
-              Add per-piece items like vessels, lids, wicks, labels, etc.
-            </CardDescription>
+            <CardDescription>{guidance.components}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             {componentFields.map((field, index) => (
@@ -865,13 +1077,13 @@ export function ProductCalculator({
           </CardContent>
         </Card>
 
-        {/* Form actions */}
-        <div className="flex justify-end gap-3 pt-4">
+        {/* Form Actions */}
+        <div className="flex justify-end gap-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button type="submit" variant="warm" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : product ? 'Update Product' : 'Save Product'}
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Saving...' : 'Save Product'}
           </Button>
         </div>
       </form>
