@@ -4,12 +4,20 @@ export const MATERIAL_CATEGORIES = [
   'Reed Diffuser Base',
   'Room Spray Base',
   'Incense Base',
+  'Alcohol',
+  'Water',
   'Candle Vessel',
+  'Wax Melt Vessel',
   'Diffuser Vessel',
+  'Spray Bottle',
+  'Spray Cap',
   'Candle Vessel Lid',
+  'Diffuser Vessel Lid',
+  'Cotton Wick',
   'Wooden Wick',
   'Reed Stick',
   'Incense Stick',
+  'Product Box',
   'Packaging',
   'Labeling',
   'Other'
@@ -32,13 +40,14 @@ export const PURCHASE_UNITS = [
 
 export const PRODUCT_TYPES = [
   'Candle',
+  'Wax Melt',
   'Reed Diffuser',
   'Room Spray',
   'Incense',
   'Other'
 ] as const;
 
-export const FILL_UNITS = ['oz', 'ml', 'sticks'] as const;
+export const FILL_UNITS = ['oz', 'ml', 'grams', 'bundle'] as const;
 
 export type MaterialCategory = typeof MATERIAL_CATEGORIES[number];
 export type PurchaseUnit = typeof PURCHASE_UNITS[number];
@@ -84,17 +93,25 @@ export const FORMULA_CATEGORIES = [
   'Fragrance Oil',
   'Reed Diffuser Base',
   'Room Spray Base',
-  'Incense Base'
+  'Incense Base',
+  'Alcohol',
+  'Water'
 ];
 
 // Categories available for per-piece components
 export const COMPONENT_CATEGORIES = [
   'Candle Vessel',
+  'Wax Melt Vessel',
   'Diffuser Vessel',
+  'Spray Bottle',
+  'Spray Cap',
   'Candle Vessel Lid',
+  'Diffuser Vessel Lid',
+  'Cotton Wick',
   'Wooden Wick',
   'Reed Stick',
   'Incense Stick',
+  'Product Box',
   'Packaging',
   'Labeling',
   'Other'
