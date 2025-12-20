@@ -159,6 +159,7 @@ export type Database = {
           name: string
           packaging_cost_per_unit: number | null
           product_type: string
+          reed_stick_count: number | null
           retail_markup: number | null
           retail_price: number | null
           shipping_cost_per_unit: number | null
@@ -182,6 +183,7 @@ export type Database = {
           name: string
           packaging_cost_per_unit?: number | null
           product_type: string
+          reed_stick_count?: number | null
           retail_markup?: number | null
           retail_price?: number | null
           shipping_cost_per_unit?: number | null
@@ -205,6 +207,7 @@ export type Database = {
           name?: string
           packaging_cost_per_unit?: number | null
           product_type?: string
+          reed_stick_count?: number | null
           retail_markup?: number | null
           retail_price?: number | null
           shipping_cost_per_unit?: number | null
