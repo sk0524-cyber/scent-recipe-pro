@@ -22,9 +22,9 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/materials" element={<Materials />} />
-            <Route path="/calculator" element={<Calculator />} />
+            <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
+            <Route path="/materials" element={<AuthGuard><Materials /></AuthGuard>} />
+            <Route path="/calculator" element={<AuthGuard><Calculator /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
