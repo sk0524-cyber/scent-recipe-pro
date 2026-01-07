@@ -51,19 +51,12 @@ export default function Auth() {
         });
 
         if (error) {
-          if (error.message.includes('Invalid login credentials')) {
-            toast({
-              title: 'Login failed',
-              description: 'Invalid email or password. Please try again.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Login failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          console.error('Login error:', error);
+          toast({
+            title: 'Login failed',
+            description: 'Unable to log in. Please check your credentials and try again.',
+            variant: 'destructive',
+          });
         }
       } else if (mode === 'signup') {
         const { error } = await supabase.auth.signUp({
@@ -75,19 +68,12 @@ export default function Auth() {
         });
 
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              title: 'Account exists',
-              description: 'This email is already registered. Please log in instead.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Sign up failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
+          console.error('Sign up error:', error);
+          toast({
+            title: 'Sign up failed',
+            description: 'Unable to create account. Please try again.',
+            variant: 'destructive',
+          });
         } else {
           toast({
             title: 'Account created',
@@ -101,9 +87,10 @@ export default function Auth() {
         });
 
         if (error) {
+          console.error('Password reset error:', error);
           toast({
             title: 'Error',
-            description: error.message,
+            description: 'Unable to send reset link. Please try again.',
             variant: 'destructive',
           });
         } else {
@@ -119,9 +106,10 @@ export default function Auth() {
         });
 
         if (error) {
+          console.error('Password update error:', error);
           toast({
             title: 'Error',
-            description: error.message,
+            description: 'Unable to update password. Please try again.',
             variant: 'destructive',
           });
         } else {
@@ -152,9 +140,10 @@ export default function Auth() {
     });
 
     if (error) {
+      console.error('Google sign-in error:', error);
       toast({
         title: 'Error',
-        description: error.message,
+        description: 'Unable to sign in with Google. Please try again.',
         variant: 'destructive',
       });
     }
