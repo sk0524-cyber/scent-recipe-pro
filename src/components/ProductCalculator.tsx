@@ -1,11 +1,13 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Info, Scale, Percent } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Form,
   FormControl,
@@ -160,6 +162,8 @@ export function ProductCalculator({
   isSubmitting,
 }: ProductCalculatorProps) {
   const initialProductType = product?.product_type || 'Candle';
+  const [formulaInputMode, setFormulaInputMode] = useState<'percentage' | 'weight'>('percentage');
+  const [weights, setWeights] = useState<Record<number, number>>({});
   
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -229,6 +233,32 @@ export function ProductCalculator({
       }
     }
   }, [productType, product, replaceFormula, form, watchAll.fill_unit]);
+
+  // Sync weights to percentages when in weight mode
+  useEffect(() => {
+    if (formulaInputMode !== 'weight') return;
+    const totalWeight = Object.values(weights).reduce((sum, w) => sum + (w || 0), 0);
+    if (totalWeight <= 0) return;
+    
+    formulaFields.forEach((_, index) => {
+      const w = weights[index] || 0;
+      const pct = (w / totalWeight) * 100;
+      const currentPct = watchAll.formula_items[index]?.percentage;
+      const roundedPct = Math.round(pct * 10) / 10;
+      if (currentPct !== roundedPct) {
+        form.setValue(`formula_items.${index}.percentage`, roundedPct, { shouldDirty: true });
+      }
+    });
+  }, [weights, formulaInputMode, formulaFields.length]);
+
+  const handleWeightChange = useCallback((index: number, value: number) => {
+    setWeights(prev => ({ ...prev, [index]: value }));
+  }, []);
+
+  const totalWeight = useMemo(() => 
+    Object.values(weights).reduce((sum, w) => sum + (w || 0), 0),
+    [weights]
+  );
 
   // Filter materials by category for dropdowns
   const waxMaterials = materials.filter(m => m.category === 'Wax');
@@ -397,12 +427,52 @@ export function ProductCalculator({
     );
   };
 
+  // Helper to render percentage or weight input for a formula item
+  const renderFormulaInput = (index: number, label: string = '%', hideLabel: boolean = false) => {
+    if (formulaInputMode === 'weight') {
+      const pct = watchAll.formula_items[index]?.percentage || 0;
+      return (
+        <FormItem>
+          <FormLabel className={hideLabel ? 'sr-only' : ''}>oz</FormLabel>
+          <div className="flex items-center gap-2">
+            <Input
+              type="number"
+              step="0.01"
+              min="0"
+              value={weights[index] || ''}
+              onChange={(e) => handleWeightChange(index, parseFloat(e.target.value) || 0)}
+              placeholder="0"
+            />
+            <Badge variant="secondary" className="whitespace-nowrap text-xs">
+              {pct.toFixed(1)}%
+            </Badge>
+          </div>
+        </FormItem>
+      );
+    }
+
+    return (
+      <FormField
+        control={form.control}
+        name={`formula_items.${index}.percentage`}
+        render={({ field: inputField }) => (
+          <FormItem>
+            <FormLabel className={hideLabel ? 'sr-only' : ''}>{label}</FormLabel>
+            <FormControl>
+              <Input type="number" step="0.1" min="0" max="100" {...inputField} />
+            </FormControl>
+          </FormItem>
+        )}
+      />
+    );
+  };
+
   // Render candle formula (3 wax slots + 1 fragrance)
   const renderCandleFormula = () => (
     <div className="space-y-4">
       {/* Wax slots */}
       {formulaFields.slice(0, 3).map((field, index) => (
-        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px]">
+        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,auto]">
           <FormField
             control={form.control}
             name={`formula_items.${index}.material_id`}
@@ -427,18 +497,7 @@ export function ProductCalculator({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name={`formula_items.${index}.percentage`}
-            render={({ field: inputField }) => (
-              <FormItem>
-                <FormLabel>%</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {renderFormulaInput(index)}
         </div>
       ))}
 
@@ -446,7 +505,7 @@ export function ProductCalculator({
 
       {/* Fragrance slot */}
       {formulaFields.length >= 4 && (
-        <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
+        <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
           <FormField
             control={form.control}
             name={`formula_items.3.material_id`}
@@ -471,18 +530,7 @@ export function ProductCalculator({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name={`formula_items.3.percentage`}
-            render={({ field: inputField }) => (
-              <FormItem>
-                <FormLabel>%</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {renderFormulaInput(3)}
         </div>
       )}
     </div>
@@ -493,7 +541,7 @@ export function ProductCalculator({
     <div className="space-y-4">
       {/* Single wax slot */}
       {formulaFields.length >= 1 && (
-        <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
+        <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
           <FormField
             control={form.control}
             name={`formula_items.0.material_id`}
@@ -518,18 +566,7 @@ export function ProductCalculator({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name={`formula_items.0.percentage`}
-            render={({ field: inputField }) => (
-              <FormItem>
-                <FormLabel>%</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {renderFormulaInput(0)}
         </div>
       )}
 
@@ -537,7 +574,7 @@ export function ProductCalculator({
 
       {/* Fragrance slot */}
       {formulaFields.length >= 2 && (
-        <div className="grid gap-4 sm:grid-cols-[1fr,100px]">
+        <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
           <FormField
             control={form.control}
             name={`formula_items.1.material_id`}
@@ -562,18 +599,7 @@ export function ProductCalculator({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name={`formula_items.1.percentage`}
-            render={({ field: inputField }) => (
-              <FormItem>
-                <FormLabel>%</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {renderFormulaInput(1)}
         </div>
       )}
     </div>
@@ -583,7 +609,7 @@ export function ProductCalculator({
   const renderFlexibleFormula = () => (
     <div className="space-y-4">
       {formulaFields.map((field, index) => (
-        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px,auto]">
+        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,auto,auto]">
           <FormField
             control={form.control}
             name={`formula_items.${index}.material_id`}
@@ -607,18 +633,7 @@ export function ProductCalculator({
               </FormItem>
             )}
           />
-          <FormField
-            control={form.control}
-            name={`formula_items.${index}.percentage`}
-            render={({ field: inputField }) => (
-              <FormItem>
-                <FormLabel className={index > 0 ? 'sr-only' : ''}>%</FormLabel>
-                <FormControl>
-                  <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
+          {renderFormulaInput(index, '%', index > 0)}
           <Button
             type="button"
             variant="ghost"
@@ -780,8 +795,35 @@ export function ProductCalculator({
         {/* Formula Section */}
         <Card>
           <CardHeader>
-            <CardTitle>Formula (Percentages)</CardTitle>
-            <CardDescription>{guidance.formula}</CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle>Formula {formulaInputMode === 'weight' ? '(Weight → %)' : '(Percentages)'}</CardTitle>
+                <CardDescription>{guidance.formula}</CardDescription>
+              </div>
+              <ToggleGroup
+                type="single"
+                value={formulaInputMode}
+                onValueChange={(val) => {
+                  if (val) setFormulaInputMode(val as 'percentage' | 'weight');
+                }}
+                size="sm"
+                className="border rounded-lg p-1"
+              >
+                <ToggleGroupItem value="percentage" aria-label="Percentage mode" className="text-xs gap-1 px-3">
+                  <Percent className="h-3 w-3" />
+                  Percentage
+                </ToggleGroupItem>
+                <ToggleGroupItem value="weight" aria-label="Weight mode" className="text-xs gap-1 px-3">
+                  <Scale className="h-3 w-3" />
+                  Weight (oz)
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+            {formulaInputMode === 'weight' && totalWeight > 0 && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                Total weight: <span className="font-medium text-foreground">{totalWeight.toFixed(2)} oz</span>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
             {/* Formula percentage progress bar */}
