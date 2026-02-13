@@ -1,48 +1,37 @@
 
 
-# Fix Formula Cost Calculations to Use Actual Weights
+# Fix Google Sign-In 403 Error
 
-## The Problem
+## Problem
+The "Continue with Google" button calls `supabase.auth.signInWithOAuth()` directly, which returns a 403 error on Lovable Cloud. Lovable Cloud provides a managed Google OAuth flow that must be used instead.
 
-Right now, when you enter weights like 1.5 oz DPB + 0.5 oz Fragrance, the app converts them to percentages (75% / 25%) and then recalculates the amounts using `totalBatchWeight = units_per_batch x fill_weight_per_unit`. For incense with 50 sticks, that gives a completely wrong batch weight -- the formula is 2 oz total regardless of how many sticks you make.
+## Fix
 
-The correct calculation (as you showed) should multiply each weight directly by its cost per oz:
-- DPG: 1.5 oz x $0.33/oz = $0.495
-- Fragrance: 0.5 oz x $1.1062/oz = $0.5531
-- Total formula cost: $1.0481
+### Step 1: Generate the Lovable Cloud auth module
+Use the Configure Social Login tool to generate the `src/integrations/lovable/` module and install `@lovable.dev/cloud-auth-js`.
 
-## The Fix
+### Step 2: Update `src/pages/Auth.tsx`
+Replace the `handleGoogleSignIn` function to use the managed OAuth:
 
-### 1. Update `calculateFormulaCosts` in `src/lib/calculations.ts`
+```typescript
+import { lovable } from "@/integrations/lovable/index";
 
-Add an optional `weightPerBatch` field to the `FormulaItem` interface. When present, use it directly instead of deriving amounts from percentages:
+const handleGoogleSignIn = async () => {
+  const { error } = await lovable.auth.signInWithOAuth("google", {
+    redirect_uri: window.location.origin,
+  });
 
-```
-// Current: amountPerBatch = (percentage / 100) * totalBatchWeight
-// New: amountPerBatch = item.weightPerBatch ?? (percentage / 100) * totalBatchWeight
-```
-
-This keeps backward compatibility -- percentage-mode products still work exactly as before.
-
-### 2. Update calculations in `src/components/ProductCalculator.tsx`
-
-When in weight mode, pass the entered weights through to `calculateFormulaCosts`:
-
-```
-const formulaItems = watchAll.formula_items.map((item, index) => ({
-  material_id: item.material_id,
-  percentage: item.percentage,
-  slot_type: item.slot_type,
-  weightPerBatch: formulaInputMode === 'weight' ? (weights[index] || 0) : undefined,
-}));
+  if (error) {
+    toast({
+      title: 'Error',
+      description: 'Unable to sign in with Google. Please try again.',
+      variant: 'destructive',
+    });
+  }
+};
 ```
 
-No other files need to change. The database still stores percentages. The only difference is that when you enter weights, costs are calculated from those actual weights instead of going through a percentage-to-weight round-trip that uses an unrelated batch weight.
-
-## Summary of Changes
-
-| File | Change |
-|---|---|
-| `src/lib/calculations.ts` | Add optional `weightPerBatch` to `FormulaItem`; use it directly when present |
-| `src/components/ProductCalculator.tsx` | Pass `weights` into formula items when in weight mode |
+### No other changes needed
+- Authentication context, auth guard, and all other auth logic remain the same
+- The managed OAuth integrates with the same authentication system behind the scenes
 
