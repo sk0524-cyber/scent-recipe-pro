@@ -270,10 +270,11 @@ export function ProductCalculator({
   const calculations = useMemo(() => {
     const totalBatchWeight = watchAll.units_per_batch * watchAll.fill_weight_per_unit;
     
-    const formulaItems = watchAll.formula_items.map(item => ({
+    const formulaItems = watchAll.formula_items.map((item, index) => ({
       material_id: item.material_id,
       percentage: item.percentage,
       slot_type: item.slot_type,
+      weightPerBatch: formulaInputMode === 'weight' ? (weights[index] || 0) : undefined,
     }));
 
     const componentItems = watchAll.component_items.map(item => ({
@@ -329,7 +330,7 @@ export function ProductCalculator({
       retailPrice,
       totalPercentage,
     };
-  }, [watchAll, materials]);
+  }, [watchAll, materials, formulaInputMode, weights]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
     const formData: ProductFormData = {

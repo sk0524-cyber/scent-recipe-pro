@@ -20,6 +20,7 @@ export interface FormulaItem {
   percentage: number;
   slot_type?: string;
   material?: Material;
+  weightPerBatch?: number;
 }
 
 export interface ComponentItem {
@@ -144,8 +145,8 @@ export function calculateFormulaCosts(
       const material = materials.find(m => m.id === item.material_id);
       if (!material) return null;
 
-      // Calculate amount per batch
-      const amountPerBatch = (item.percentage / 100) * totalBatchWeight;
+      // Use actual weight if provided (weight mode), otherwise derive from percentage
+      const amountPerBatch = item.weightPerBatch != null ? item.weightPerBatch : (item.percentage / 100) * totalBatchWeight;
       
       // Get cost per oz (convert if needed)
       let costPerOz = material.cost_per_unit;
