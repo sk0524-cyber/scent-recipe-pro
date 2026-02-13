@@ -287,6 +287,13 @@ export function formatCurrency(value: number, decimals: number = 2): string {
 }
 
 /**
+ * Calculate pack-level COGS
+ */
+export function calculatePackCOGS(cogsPerUnit: number, packSize: number): number {
+  return cogsPerUnit * packSize;
+}
+
+/**
  * Format percentage
  */
 export function formatPercentage(value: number): string {

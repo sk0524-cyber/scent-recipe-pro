@@ -11,6 +11,7 @@ export interface Product {
   fill_weight_per_unit: number;
   fill_unit: string;
   reed_stick_count: number | null;
+  selling_pack_size: number;
   labor_rate_per_hour: number;
   labor_hours_per_batch: number;
   shipping_overhead_per_batch: number;
@@ -55,6 +56,7 @@ export interface ProductFormData {
   fill_weight_per_unit: number;
   fill_unit: string;
   reed_stick_count?: number | null;
+  selling_pack_size?: number;
   labor_rate_per_hour: number;
   labor_hours_per_batch: number;
   shipping_overhead_per_batch: number;

@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Product } from '@/hooks/useProducts';
-import { formatCurrency, calculateProfitMargin, formatPercentage } from '@/lib/calculations';
+import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice } from '@/lib/calculations';
 
 interface ProductCardProps {
   product: Product;
@@ -25,6 +25,12 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductCardProps) {
+  const packSize = product.selling_pack_size || 1;
+  const hasPackSize = packSize > 1;
+  const packCOGS = hasPackSize ? calculatePackCOGS(product.total_cogs_per_unit, packSize) : product.total_cogs_per_unit;
+  const wholesalePrice = hasPackSize ? calculateWholesalePrice(packCOGS, product.wholesale_markup) : product.wholesale_price;
+  const retailPrice = hasPackSize ? calculateRetailPrice(packCOGS, product.retail_markup) : product.retail_price;
+
   return (
     <Card className="group transition-smooth hover:shadow-elevated overflow-hidden">
       <CardContent className="p-0">
@@ -38,6 +44,11 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
                 <span className="text-xs text-muted-foreground">
                   {product.fill_weight_per_unit} {product.fill_unit}
                 </span>
+                {hasPackSize && (
+                  <Badge variant="outline" className="text-xs">
+                    Pack of {packSize}
+                  </Badge>
+                )}
               </div>
               <TooltipProvider>
                 <Tooltip>
@@ -53,6 +64,7 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
               </TooltipProvider>
               <p className="text-sm text-muted-foreground mt-1">
                 {product.units_per_batch} units per batch
+                {hasPackSize && ` · ${Math.floor(product.units_per_batch / packSize)} packs`}
               </p>
             </div>
             <DropdownMenu>
@@ -90,27 +102,32 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
         {/* Pricing summary */}
         <div className="grid grid-cols-3 divide-x divide-border border-t border-border bg-muted/30">
           <div className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">COGS</p>
+            <p className="text-xs text-muted-foreground mb-1">COGS{hasPackSize ? '/pack' : ''}</p>
             <p className="font-display text-lg font-semibold text-foreground">
-              {formatCurrency(product.total_cogs_per_unit)}
+              {formatCurrency(packCOGS)}
             </p>
+            {hasPackSize && (
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {formatCurrency(product.total_cogs_per_unit)}/unit
+              </p>
+            )}
           </div>
           <div className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Wholesale</p>
+            <p className="text-xs text-muted-foreground mb-1">Wholesale{hasPackSize ? '/pack' : ''}</p>
             <p className="font-display text-lg font-semibold text-secondary-foreground">
-              {formatCurrency(product.wholesale_price)}
+              {formatCurrency(wholesalePrice)}
             </p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-              {formatPercentage(calculateProfitMargin(product.wholesale_price ?? 0, product.total_cogs_per_unit ?? 0))} margin
+              {formatPercentage(calculateProfitMargin(wholesalePrice ?? 0, packCOGS ?? 0))} margin
             </p>
           </div>
           <div className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Retail</p>
+            <p className="text-xs text-muted-foreground mb-1">Retail{hasPackSize ? '/pack' : ''}</p>
             <p className="font-display text-lg font-semibold text-primary">
-              {formatCurrency(product.retail_price)}
+              {formatCurrency(retailPrice)}
             </p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
-              {formatPercentage(calculateProfitMargin(product.retail_price ?? 0, product.total_cogs_per_unit ?? 0))} margin
+              {formatPercentage(calculateProfitMargin(retailPrice ?? 0, packCOGS ?? 0))} margin
             </p>
           </div>
         </div>
