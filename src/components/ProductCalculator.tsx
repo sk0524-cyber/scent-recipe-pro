@@ -107,9 +107,9 @@ function getProductGuidance(productType: string): { formula: string; components:
       };
     case 'Incense':
       return {
-        formula: 'Base + fragrance for your bundle',
+        formula: 'Base + fragrance for your incense',
         components: 'Typical components: product box, labels',
-        fillLabel: 'Units per Bundle',
+        fillLabel: 'Fill Weight',
       };
     default:
       return {
@@ -218,7 +218,12 @@ export function ProductCalculator({
   const isCandle = productType === 'Candle';
   const isWaxMelt = productType === 'Wax Melt';
   const isReedDiffuser = productType === 'Reed Diffuser';
+  const isIncense = productType === 'Incense';
   const isFlexibleFormula = !isCandle && !isWaxMelt;
+
+  // Incense-specific unit name
+  const unitName = isIncense ? 'stick' : 'unit';
+  const unitNamePlural = isIncense ? 'sticks' : 'units';
   
   const guidance = getProductGuidance(productType);
   const availableFillUnits = getDefaultFillUnits(productType);
@@ -233,6 +238,11 @@ export function ProductCalculator({
       const defaultUnits = getDefaultFillUnits(productType);
       if (!defaultUnits.includes(watchAll.fill_unit)) {
         form.setValue('fill_unit', defaultUnits[0]);
+      }
+
+      // For Incense, auto-set fill_weight_per_unit to 1 (each stick = 1 unit)
+      if (productType === 'Incense') {
+        form.setValue('fill_weight_per_unit', 1);
       }
     }
   }, [productType, product, replaceFormula, form, watchAll.fill_unit]);
@@ -717,11 +727,13 @@ export function ProductCalculator({
                 name="units_per_batch"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Units per Batch</FormLabel>
+                    <FormLabel>{isIncense ? 'Sticks per Batch' : 'Units per Batch'}</FormLabel>
                     <FormControl>
                       <Input type="number" min="1" {...field} />
                     </FormControl>
-                    <FormDescription>How many finished products per batch</FormDescription>
+                    <FormDescription>
+                      {isIncense ? 'How many individual sticks you make in one batch' : 'How many finished products per batch'}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -732,55 +744,63 @@ export function ProductCalculator({
                 name="selling_pack_size"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Units per Selling Pack</FormLabel>
+                    <FormLabel>{isIncense ? 'Sticks per Pack' : 'Units per Selling Pack'}</FormLabel>
                     <FormControl>
                       <Input type="number" min="1" step="1" {...field} />
                     </FormControl>
-                    <FormDescription>How many units in one sellable pack (e.g., 10 sticks per pack). Use 1 if sold individually.</FormDescription>
+                    <FormDescription>
+                      {isIncense
+                        ? 'How many sticks go into one sellable pack'
+                        : 'How many units in one sellable pack (e.g., 10 sticks per pack). Use 1 if sold individually.'}
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="fill_weight_per_unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{guidance.fillLabel}</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0" {...field} />
-                    </FormControl>
-                    <FormDescription>Amount that goes into ONE finished product</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="fill_unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Fill Unit</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value}>
+              {!isIncense && (
+                <FormField
+                  control={form.control}
+                  name="fill_weight_per_unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{guidance.fillLabel}</FormLabel>
                       <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select unit" />
-                        </SelectTrigger>
+                        <Input type="number" step="0.01" min="0" {...field} />
                       </FormControl>
-                      <SelectContent>
-                        {FILL_UNITS.filter(u => availableFillUnits.includes(u)).map((unit) => (
-                          <SelectItem key={unit} value={unit}>
-                            {unit}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormDescription>Amount that goes into ONE finished product</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+
+              {!isIncense && (
+                <FormField
+                  control={form.control}
+                  name="fill_unit"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Fill Unit</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select unit" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {FILL_UNITS.filter(u => availableFillUnits.includes(u)).map((unit) => (
+                            <SelectItem key={unit} value={unit}>
+                              {unit}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {/* Reed Stick Count - only for Reed Diffusers */}
               {isReedDiffuser && (
@@ -802,19 +822,42 @@ export function ProductCalculator({
             </div>
 
             <div className="rounded-lg bg-secondary/50 p-4 space-y-1">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-medium">Total batch size:</span>{' '}
-                <span className="text-foreground font-semibold">
-                  {calculations.totalBatchWeight.toFixed(2)} {watchAll.fill_unit}
-                </span>
-              </p>
-              {(watchAll.selling_pack_size || 1) > 1 && (
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-medium">Packs per batch:</span>{' '}
-                  <span className="text-foreground font-semibold">
-                    {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}
-                  </span>
-                </p>
+              {isIncense ? (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Sticks per batch:</span>{' '}
+                    <span className="text-foreground font-semibold">{watchAll.units_per_batch}</span>
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Sticks per pack:</span>{' '}
+                    <span className="text-foreground font-semibold">{watchAll.selling_pack_size || 1}</span>
+                  </p>
+                  {(watchAll.selling_pack_size || 1) > 1 && (
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Packs per batch:</span>{' '}
+                      <span className="text-foreground font-semibold">
+                        {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}
+                      </span>
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Total batch size:</span>{' '}
+                    <span className="text-foreground font-semibold">
+                      {calculations.totalBatchWeight.toFixed(2)} {watchAll.fill_unit}
+                    </span>
+                  </p>
+                  {(watchAll.selling_pack_size || 1) > 1 && (
+                    <p className="text-sm text-muted-foreground">
+                      <span className="font-medium">Packs per batch:</span>{' '}
+                      <span className="text-foreground font-semibold">
+                        {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}
+                      </span>
+                    </p>
+                  )}
+                </>
               )}
             </div>
           </CardContent>
@@ -1065,23 +1108,23 @@ export function ProductCalculator({
             {/* Cost breakdown */}
             <div className="space-y-3">
               <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Materials cost per unit</span>
+                <span className="text-muted-foreground">Materials cost per {unitName}</span>
                 <span>{formatCurrency(calculations.totalMaterialsCostPerUnit, 4)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Packaging & components per unit</span>
+                <span className="text-muted-foreground">Packaging & components per {unitName}</span>
                 <span>{formatCurrency(calculations.totalPackagingCostPerUnit, 4)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Labor per unit</span>
+                <span className="text-muted-foreground">Labor per {unitName}</span>
                 <span>{formatCurrency(calculations.laborCostPerUnit, 4)}</span>
               </div>
               <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Shipping/overhead per unit</span>
+                <span className="text-muted-foreground">Shipping/overhead per {unitName}</span>
                 <span>{formatCurrency(calculations.shippingCostPerUnit, 4)}</span>
               </div>
               <div className="flex justify-between py-3 bg-primary/5 rounded-lg px-4 -mx-4">
-                <span className="font-display text-lg font-semibold">Total COGS per unit</span>
+                <span className="font-display text-lg font-semibold">COGS per {unitName}</span>
                 <span className="font-display text-xl font-bold text-primary">
                   {formatCurrency(calculations.totalCOGS)}
                 </span>
@@ -1089,7 +1132,7 @@ export function ProductCalculator({
               {(watchAll.selling_pack_size || 1) > 1 && (
                 <div className="flex justify-between py-3 bg-accent/50 rounded-lg px-4 -mx-4">
                   <span className="font-display text-lg font-semibold">
-                    COGS per pack of {watchAll.selling_pack_size}
+                    COGS per pack ({watchAll.selling_pack_size} {unitNamePlural})
                   </span>
                   <span className="font-display text-xl font-bold text-primary">
                     {formatCurrency(calculations.totalCOGS * watchAll.selling_pack_size)}
