@@ -1,66 +1,57 @@
 
+# Simplify Product Details Wording for Incense
 
-# Add "Selling Pack Size" to Product Calculator
+## Problem
+The current labels -- "Units per Batch," "Units per Selling Pack," and "Units per Bundle" (fill weight) -- are confusing. You want clear, intuitive language that maps to how you actually think about your incense production:
 
-## What This Does
-
-Right now, every cost and price is shown "per unit" (per single incense stick). This change adds an optional **"Units per Pack"** field so you can define how you actually sell the product (e.g., 10 sticks per pack). The calculator will then show costs and suggested prices both per single unit AND per pack.
-
-## How It Works
-
-Your incense example:
-- Batch: 50 sticks
-- Pack size: 10 sticks
-- Packs per batch: 5
-- COGS per stick: $X --> COGS per pack: $X times 10
-- Wholesale/Retail prices calculated and rounded at the pack level
+- I make **50 sticks** per batch
+- I sell them **10 sticks per pack**
+- That gives me **5 packs per batch**
 
 ## Changes
 
-### 1. Database: Add `selling_pack_size` column to `products` table
+### 1. Update field labels and helper text in `src/components/ProductCalculator.tsx`
 
-A new optional integer column defaulting to 1 (meaning "sold individually" -- no change for existing products).
+For **Incense** product type specifically, change the wording:
 
-### 2. `src/hooks/useProducts.ts` -- Add the field to types and queries
+| Current Label | New Label (Incense) | Helper Text |
+|---|---|---|
+| Units per Batch | **Sticks per Batch** | How many individual sticks you make in one batch |
+| Units per Selling Pack | **Sticks per Pack** | How many sticks go into one sellable pack |
+| Fill Weight (Units per Bundle) | Remove / hide for Incense | Not needed -- the "bundle" concept is replaced by the pack size |
 
-- Add `selling_pack_size: number` to `Product`, `ProductFormData`
-- Pass it through create/update/duplicate mutations
+For **non-Incense** types, the labels stay the same as they are now.
 
-### 3. `src/components/ProductCalculator.tsx` -- Add input and pack-level display
+### 2. Update the batch info summary
 
-- Add a **"Units per Selling Pack"** number input in the Product Details section (below Units per Batch)
-  - Helper text: "How many individual units in one sellable pack (e.g., 10 sticks per pack)"
-  - Default: 1
-- In the COGS and Pricing Summary section, when pack size > 1:
-  - Show both "per unit" and "per pack" costs
-  - Calculate wholesale/retail prices at the **pack level** (COGS per unit x pack size, then apply markup and round)
-  - Show "Packs per batch: X" info
+Currently shows: "Total batch size: 2500.00 bundle"
 
-### 4. `src/lib/calculations.ts` -- Add pack-level price helpers
+Change to show (for Incense):
+- **Sticks per batch:** 50
+- **Sticks per pack:** 10
+- **Packs per batch:** 5
 
-- Add `calculatePackCOGS(cogsPerUnit, packSize)` 
-- Update wholesale/retail calculation to accept pack-level COGS
+### 3. Simplify Incense-specific behavior
 
-### 5. `src/components/ProductCard.tsx` -- Show pack pricing on cards
+For Incense, the `fill_weight_per_unit` field is currently labeled "Units per Bundle" and set to 50 -- this is being confused with the batch size. For Incense, we should:
+- Auto-set `fill_weight_per_unit` to `1` (each stick is one unit for formula cost purposes)
+- Hide the fill weight field since it is not meaningful for incense
+- Hide the Fill Unit dropdown for incense (it will stay as "bundle" internally)
 
-- When `selling_pack_size > 1`, display prices as "per pack of X" instead of just the raw number
-- Show both per-unit COGS and per-pack selling prices
+### 4. Update COGS summary labels
 
-## What Stays the Same
+When pack size > 1, show:
+- **COGS per stick:** $X.XX
+- **COGS per pack (10 sticks):** $X.XX
 
-- All internal calculations remain per-unit (materials, labor, shipping, etc.)
-- Existing products default to pack size 1 -- no change in behavior
-- Database stores per-unit costs as before
-- Pack pricing is derived at display time from per-unit COGS times pack size
+Instead of generic "COGS per unit" and "COGS per pack of 10."
 
 ## Technical Details
 
-| File | Change |
-|---|---|
-| Database migration | Add `selling_pack_size INTEGER NOT NULL DEFAULT 1` to products |
-| `src/hooks/useProducts.ts` | Add field to interfaces, pass through CRUD |
-| `src/components/ProductCalculator.tsx` | Add pack size input, show pack-level summary |
-| `src/lib/calculations.ts` | Add `calculatePackCOGS` helper |
-| `src/components/ProductCard.tsx` | Show "per pack of X" when applicable |
-| `src/lib/export.ts` | Include pack size and pack prices in CSV export |
+All changes are in `src/components/ProductCalculator.tsx`:
 
+- Update `getProductGuidance()` for Incense to return clearer labels
+- Add conditional label logic: when `productType === 'Incense'`, use "Sticks per Batch" / "Sticks per Pack"
+- Hide `fill_weight_per_unit` and `fill_unit` fields when Incense is selected; auto-set fill weight to 1
+- Update the batch info summary block to use product-type-aware unit names (e.g., "sticks" for incense)
+- Update COGS summary to use "per stick" / "per pack (X sticks)" wording for Incense
