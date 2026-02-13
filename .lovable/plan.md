@@ -1,49 +1,48 @@
 
 
-# Add Weight-Based Input to Product Formulas
+# Fix Formula Cost Calculations to Use Actual Weights
 
-## What Changes
+## The Problem
 
-Currently, product formulas only accept **percentage** inputs (e.g., 75% base, 25% fragrance). This update adds an option to enter **actual weights** instead (e.g., 1.5 oz of DPB + 0.5 oz of fragrance), which is how many makers actually measure their recipes.
+Right now, when you enter weights like 1.5 oz DPB + 0.5 oz Fragrance, the app converts them to percentages (75% / 25%) and then recalculates the amounts using `totalBatchWeight = units_per_batch x fill_weight_per_unit`. For incense with 50 sticks, that gives a completely wrong batch weight -- the formula is 2 oz total regardless of how many sticks you make.
 
-## How It Will Work
+The correct calculation (as you showed) should multiply each weight directly by its cost per oz:
+- DPG: 1.5 oz x $0.33/oz = $0.495
+- Fragrance: 0.5 oz x $1.1062/oz = $0.5531
+- Total formula cost: $1.0481
 
-- A toggle switch at the top of the Formula section lets you choose between **"Percentage"** and **"Weight (oz)"** input modes
-- In **Weight mode**, you enter the actual amount of each material per batch (e.g., 1.5 oz)
-- The app automatically calculates the percentages from your weights (1.5 oz out of 2.0 oz total = 75%)
-- All cost calculations continue to work the same way -- the weights are converted to percentages behind the scenes
-- The percentage progress bar still shows whether your formula totals 100%
-- Saved products still store percentages in the database, so nothing breaks for existing products
+## The Fix
 
-## Example: Your Incense Recipe
+### 1. Update `calculateFormulaCosts` in `src/lib/calculations.ts`
 
-- Enter: 1.5 oz DPB + 0.5 oz Fragrance = 2.0 oz total per batch
-- Auto-calculated: DPB = 75%, Fragrance = 25%
-- Costs calculated from those percentages as before
+Add an optional `weightPerBatch` field to the `FormulaItem` interface. When present, use it directly instead of deriving amounts from percentages:
 
-## Technical Details
+```
+// Current: amountPerBatch = (percentage / 100) * totalBatchWeight
+// New: amountPerBatch = item.weightPerBatch ?? (percentage / 100) * totalBatchWeight
+```
 
-### Files Modified
+This keeps backward compatibility -- percentage-mode products still work exactly as before.
 
-**`src/components/ProductCalculator.tsx`**
-- Add a `formulaInputMode` state: `"percentage"` or `"weight"`
-- Add a toggle UI (segmented button or switch) in the Formula card header
-- Add a `weight` field alongside percentage in the formula item schema (local only, not persisted)
-- In weight mode: show weight input (oz) instead of percentage input
-- Add a `useMemo` or `useEffect` that converts entered weights to percentages automatically:
-  - `totalWeight = sum of all item weights`
-  - `item.percentage = (item.weight / totalWeight) * 100`
-- Show the auto-calculated percentage as a read-only badge next to each weight input
-- The formula progress bar continues to work from the calculated percentages
-- On submit, only percentages are saved (weights are a UI convenience)
+### 2. Update calculations in `src/components/ProductCalculator.tsx`
 
-**`src/components/ProductCalculator.tsx` -- Schema update**
-- Extend `formulaItemSchema` to include an optional `weight` field: `weight: z.coerce.number().min(0).optional()`
-- The weight field is only used in the UI and stripped before saving
+When in weight mode, pass the entered weights through to `calculateFormulaCosts`:
 
-### No Database Changes Required
-Percentages remain the stored format. Weight input is a UI-only convenience that auto-converts to percentages.
+```
+const formulaItems = watchAll.formula_items.map((item, index) => ({
+  material_id: item.material_id,
+  percentage: item.percentage,
+  slot_type: item.slot_type,
+  weightPerBatch: formulaInputMode === 'weight' ? (weights[index] || 0) : undefined,
+}));
+```
 
-### No Changes to `src/lib/calculations.ts`
-All calculation functions continue to receive percentages as before.
+No other files need to change. The database still stores percentages. The only difference is that when you enter weights, costs are calculated from those actual weights instead of going through a percentage-to-weight round-trip that uses an unrelated batch weight.
+
+## Summary of Changes
+
+| File | Change |
+|---|---|
+| `src/lib/calculations.ts` | Add optional `weightPerBatch` to `FormulaItem`; use it directly when present |
+| `src/components/ProductCalculator.tsx` | Pass `weights` into formula items when in weight mode |
 
