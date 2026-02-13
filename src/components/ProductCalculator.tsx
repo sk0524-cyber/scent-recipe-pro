@@ -38,6 +38,7 @@ import {
   calculateTotalCOGS,
   calculateWholesalePrice,
   calculateRetailPrice,
+  calculatePackCOGS,
   formatCurrency,
 } from '@/lib/calculations';
 
@@ -56,6 +57,7 @@ const formSchema = z.object({
   name: z.string().min(1, 'Product name is required').max(200),
   product_type: z.string().min(1, 'Product type is required'),
   units_per_batch: z.coerce.number().min(1, 'Must produce at least 1 unit'),
+  selling_pack_size: z.coerce.number().min(1, 'Pack size must be at least 1'),
   fill_weight_per_unit: z.coerce.number().min(0.001, 'Fill weight must be greater than 0'),
   fill_unit: z.string().min(1, 'Fill unit is required'),
   reed_stick_count: z.coerce.number().min(0).optional(),
@@ -171,6 +173,7 @@ export function ProductCalculator({
       name: product?.name || '',
       product_type: initialProductType,
       units_per_batch: product?.units_per_batch || 12,
+      selling_pack_size: product?.selling_pack_size || 1,
       fill_weight_per_unit: product?.fill_weight_per_unit || 12,
       fill_unit: product?.fill_unit || 'oz',
       reed_stick_count: product?.reed_stick_count || undefined,
@@ -312,8 +315,8 @@ export function ProductCalculator({
       shippingCostPerUnit
     );
 
-    const wholesalePrice = calculateWholesalePrice(totalCOGS, watchAll.wholesale_markup);
-    const retailPrice = calculateRetailPrice(totalCOGS, watchAll.retail_markup);
+    const wholesalePrice = calculateWholesalePrice(totalCOGS * (watchAll.selling_pack_size || 1), watchAll.wholesale_markup);
+    const retailPrice = calculateRetailPrice(totalCOGS * (watchAll.selling_pack_size || 1), watchAll.retail_markup);
 
     const totalPercentage = formulaItems.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
 
@@ -337,6 +340,7 @@ export function ProductCalculator({
       name: values.name,
       product_type: values.product_type,
       units_per_batch: values.units_per_batch,
+      selling_pack_size: values.selling_pack_size || 1,
       fill_weight_per_unit: values.fill_weight_per_unit,
       fill_unit: values.fill_unit,
       reed_stick_count: values.product_type === 'Reed Diffuser' ? values.reed_stick_count : null,
@@ -725,6 +729,21 @@ export function ProductCalculator({
 
               <FormField
                 control={form.control}
+                name="selling_pack_size"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Units per Selling Pack</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" step="1" {...field} />
+                    </FormControl>
+                    <FormDescription>How many units in one sellable pack (e.g., 10 sticks per pack). Use 1 if sold individually.</FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
                 name="fill_weight_per_unit"
                 render={({ field }) => (
                   <FormItem>
@@ -782,13 +801,21 @@ export function ProductCalculator({
               )}
             </div>
 
-            <div className="rounded-lg bg-secondary/50 p-4">
+            <div className="rounded-lg bg-secondary/50 p-4 space-y-1">
               <p className="text-sm text-muted-foreground">
                 <span className="font-medium">Total batch size:</span>{' '}
                 <span className="text-foreground font-semibold">
                   {calculations.totalBatchWeight.toFixed(2)} {watchAll.fill_unit}
                 </span>
               </p>
+              {(watchAll.selling_pack_size || 1) > 1 && (
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-medium">Packs per batch:</span>{' '}
+                  <span className="text-foreground font-semibold">
+                    {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}
+                  </span>
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -1059,6 +1086,16 @@ export function ProductCalculator({
                   {formatCurrency(calculations.totalCOGS)}
                 </span>
               </div>
+              {(watchAll.selling_pack_size || 1) > 1 && (
+                <div className="flex justify-between py-3 bg-accent/50 rounded-lg px-4 -mx-4">
+                  <span className="font-display text-lg font-semibold">
+                    COGS per pack of {watchAll.selling_pack_size}
+                  </span>
+                  <span className="font-display text-xl font-bold text-primary">
+                    {formatCurrency(calculations.totalCOGS * watchAll.selling_pack_size)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <Separator />
@@ -1099,7 +1136,9 @@ export function ProductCalculator({
             {/* Final prices */}
             <div className="grid gap-4 sm:grid-cols-2 mt-6">
               <div className="rounded-xl bg-secondary p-6 text-center">
-                <p className="text-sm text-secondary-foreground/70 mb-2">Wholesale Price</p>
+                <p className="text-sm text-secondary-foreground/70 mb-2">
+                  Wholesale Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
+                </p>
                 <p className="font-display text-3xl font-bold text-secondary-foreground">
                   {formatCurrency(calculations.wholesalePrice)}
                 </p>
@@ -1108,7 +1147,9 @@ export function ProductCalculator({
                 </p>
               </div>
               <div className="rounded-xl bg-primary p-6 text-center">
-                <p className="text-sm text-primary-foreground/70 mb-2">Retail Price</p>
+                <p className="text-sm text-primary-foreground/70 mb-2">
+                  Retail Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
+                </p>
                 <p className="font-display text-3xl font-bold text-primary-foreground">
                   {formatCurrency(calculations.retailPrice)}
                 </p>
@@ -1117,6 +1158,11 @@ export function ProductCalculator({
                 </p>
               </div>
             </div>
+            {(watchAll.selling_pack_size || 1) > 1 && (
+              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
+                <p><span className="font-medium text-foreground">Packs per batch:</span> {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 

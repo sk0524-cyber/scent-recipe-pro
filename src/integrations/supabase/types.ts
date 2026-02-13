@@ -162,6 +162,7 @@ export type Database = {
           reed_stick_count: number | null
           retail_markup: number | null
           retail_price: number | null
+          selling_pack_size: number
           shipping_cost_per_unit: number | null
           shipping_overhead_per_batch: number | null
           total_cogs_per_unit: number | null
@@ -186,6 +187,7 @@ export type Database = {
           reed_stick_count?: number | null
           retail_markup?: number | null
           retail_price?: number | null
+          selling_pack_size?: number
           shipping_cost_per_unit?: number | null
           shipping_overhead_per_batch?: number | null
           total_cogs_per_unit?: number | null
@@ -210,6 +212,7 @@ export type Database = {
           reed_stick_count?: number | null
           retail_markup?: number | null
           retail_price?: number | null
+          selling_pack_size?: number
           shipping_cost_per_unit?: number | null
           shipping_overhead_per_batch?: number | null
           total_cogs_per_unit?: number | null

@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN selling_pack_size INTEGER NOT NULL DEFAULT 1;
