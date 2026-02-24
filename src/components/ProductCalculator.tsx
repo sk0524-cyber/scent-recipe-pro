@@ -43,6 +43,7 @@ import {
   formatCurrency,
   isRetailReady,
   calculateRetailReadyWholesaleMarkup,
+  calculateRetailerShelfPrice,
 } from '@/lib/calculations';
 
 const formulaItemSchema = z.object({
@@ -1205,7 +1206,7 @@ export function ProductCalculator({
             </div>
 
             {/* Final prices */}
-            <div className="grid gap-4 sm:grid-cols-2 mt-6">
+            <div className="grid gap-4 sm:grid-cols-3 mt-6">
               <div className="rounded-xl bg-secondary p-6 text-center">
                 <p className="text-sm text-secondary-foreground/70 mb-2">
                   Wholesale Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
@@ -1219,13 +1220,24 @@ export function ProductCalculator({
               </div>
               <div className="rounded-xl bg-primary p-6 text-center">
                 <p className="text-sm text-primary-foreground/70 mb-2">
-                  Retail Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
+                  DTC Retail Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
                 </p>
                 <p className="font-display text-3xl font-bold text-primary-foreground">
                   {formatCurrency(calculations.retailPrice)}
                 </p>
                 <p className="text-xs text-primary-foreground/60 mt-1">
                   Rounded to nearest $0.50
+                </p>
+              </div>
+              <div className="rounded-xl bg-accent p-6 text-center">
+                <p className="text-sm text-accent-foreground/70 mb-2">
+                  Retailer Shelf Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
+                </p>
+                <p className="font-display text-3xl font-bold text-accent-foreground">
+                  {formatCurrency(calculateRetailerShelfPrice(calculations.wholesalePrice))}
+                </p>
+                <p className="text-xs text-accent-foreground/60 mt-1">
+                  Based on 70% retailer margin
                 </p>
               </div>
             </div>
