@@ -1,35 +1,41 @@
 
 
-# Add "Retail-Ready" Auto-Suggest Button for Wholesale Price
+# Add Suggested Retail Price for Wholesale Channel
 
 ## What This Does
 
-Adds a button next to the Wholesale Markup input that automatically calculates and sets the wholesale markup percentage so that retailers get exactly a 70% margin. The user keeps full control over both markup inputs but gets a one-click shortcut to hit the retail-ready target.
+Adds a new price display showing what a retailer would likely charge customers when they buy your product at your wholesale price. This helps you see both your DTC (direct-to-consumer) retail price and the retailer's expected shelf price side by side.
 
 ## How It Works
 
-Given:
-- Retail Price = COGS x (1 + retail_markup / 100)
-- Wholesale needs to be 30% of Retail for a 70% retailer margin
+If your wholesale price is $14.50 and retailers need a 70% margin, the suggested retail price is:
 
-The auto-suggest calculates: **wholesale_markup = (retail_markup + 100) x 0.30 - 100**
+**Suggested Retail = Wholesale Price / 0.30 = $48.33** (rounded to nearest $0.50 = $48.50)
 
-For example, with a 300% retail markup (4x COGS), wholesale markup = 400 x 0.30 - 100 = **20%** (1.2x COGS), giving retailers exactly 70% margin.
+This is the price a retailer would put on their shelf to achieve the standard 70% margin.
 
 ## Changes
 
-### 1. `src/components/ProductCalculator.tsx` -- Add auto-suggest button
+### 1. Calculator pricing display (`src/components/ProductCalculator.tsx`)
 
-- Next to the "Wholesale Markup (%)" label, add a small "Retail-Ready" button
-- When clicked, it calculates the correct wholesale markup from the current retail markup and updates the form field
-- The button will be styled subtly (outline/ghost style, small size) so it doesn't clutter the form
-- A brief tooltip or description explains: "Sets wholesale to give retailers 70% margin"
+- Expand the final prices section from a 2-column grid to a 3-column grid
+- Rename "Wholesale Price" to "Wholesale Price" (unchanged)
+- Rename "Retail Price" to "DTC Retail Price" to clarify it's your direct-to-consumer price
+- Add a third card: "Retailer Shelf Price" showing the suggested retail price a store would charge (wholesale / 0.30, rounded to nearest $0.50)
+- Include a small note: "Based on 70% retailer margin"
 
-### 2. `src/lib/calculations.ts` -- Add helper function
+### 2. Product card pricing display (`src/components/ProductCard.tsx`)
 
-Add `calculateRetailReadyWholesaleMarkup(retailMarkup, targetMargin = 70)` that returns the wholesale markup percentage needed to achieve the target retailer margin.
+- Expand the pricing grid from 3 columns to 4 columns
+- Add "Retailer Shelf" price alongside COGS, Wholesale, and DTC Retail
+- Show the retailer margin beneath it, matching the existing margin display style
 
-## No Database Changes Required
+### 3. Calculation helper (`src/lib/calculations.ts`)
 
-This is purely a UI convenience feature -- no schema or backend changes needed.
+- Add a `calculateRetailerShelfPrice(wholesalePrice, targetMargin = 70)` function
+- Formula: `wholesalePrice / (1 - targetMargin / 100)`, rounded to nearest $0.50
+
+### No database changes required
+
+This is a display-only feature calculated from existing data.
 
