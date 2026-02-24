@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Product } from '@/hooks/useProducts';
-import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice } from '@/lib/calculations';
+import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice, isRetailReady } from '@/lib/calculations';
 
 interface ProductCardProps {
   product: Product;
@@ -131,6 +131,22 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
             </p>
           </div>
         </div>
+
+        {/* Retail-Ready indicator */}
+        {wholesalePrice > 0 && retailPrice > 0 && (() => {
+          const { ready, retailerMargin } = isRetailReady(wholesalePrice, retailPrice);
+          return (
+            <div className={`px-5 py-2.5 border-t border-border text-xs font-medium flex items-center gap-1.5 ${
+              ready
+                ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
+                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
+            }`}>
+              <span>{ready ? '✓' : '⚠'}</span>
+              <span>{ready ? 'Retail-Ready' : `Low Retail Margin`}</span>
+              <span className="text-muted-foreground ml-auto">{retailerMargin.toFixed(1)}%</span>
+            </div>
+          );
+        })()}
       </CardContent>
     </Card>
   );

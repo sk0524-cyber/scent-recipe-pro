@@ -40,6 +40,7 @@ import {
   calculateRetailPrice,
   calculatePackCOGS,
   formatCurrency,
+  isRetailReady,
 } from '@/lib/calculations';
 
 const formulaItemSchema = z.object({
@@ -1206,6 +1207,25 @@ export function ProductCalculator({
                 <p><span className="font-medium text-foreground">Packs per batch:</span> {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}</p>
               </div>
             )}
+
+            {/* Retail-Ready Indicator */}
+            {calculations.wholesalePrice > 0 && calculations.retailPrice > 0 && (() => {
+              const { ready, retailerMargin } = isRetailReady(calculations.wholesalePrice, calculations.retailPrice);
+              return (
+                <Alert className={ready
+                  ? 'border-green-500/50 bg-green-50 dark:bg-green-950/30 [&>svg]:text-green-600 dark:[&>svg]:text-green-400'
+                  : 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400'
+                }>
+                  {ready ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                  <AlertDescription className={ready ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}>
+                    {ready
+                      ? `Retail-Ready — Retailers get ${retailerMargin.toFixed(1)}% margin (buying wholesale, selling retail)`
+                      : `Not Retail-Ready — Retailers only get ${retailerMargin.toFixed(1)}% margin (70%+ recommended)`
+                    }
+                  </AlertDescription>
+                </Alert>
+              );
+            })()}
           </CardContent>
         </Card>
 
