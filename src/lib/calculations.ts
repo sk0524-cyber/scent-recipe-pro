@@ -310,6 +310,18 @@ export function calculateProfitMargin(sellingPrice: number, cogs: number): numbe
 }
 
 /**
+ * Calculate the wholesale markup % needed to give retailers a target margin
+ * Formula: wholesale_markup = (retail_markup + 100) × (1 - targetMargin/100) - 100
+ */
+export function calculateRetailReadyWholesaleMarkup(
+  retailMarkup: number,
+  targetMargin: number = 70
+): number {
+  const result = (retailMarkup + 100) * (1 - targetMargin / 100) - 100;
+  return Math.max(0, Math.round(result * 10) / 10);
+}
+
+/**
  * Check if pricing is retail-ready
  * Retailer margin = ((retailPrice - wholesalePrice) / retailPrice) * 100
  * Retailers typically need 60-70%+ margin to cover their overhead

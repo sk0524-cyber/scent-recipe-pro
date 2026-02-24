@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Info, Scale, Percent } from 'lucide-react';
+import { Plus, Trash2, AlertTriangle, CheckCircle2, Info, Scale, Percent, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { PRODUCT_TYPES, FILL_UNITS, FORMULA_CATEGORIES, COMPONENT_CATEGORIES } from '@/lib/constants';
@@ -41,6 +42,7 @@ import {
   calculatePackCOGS,
   formatCurrency,
   isRetailReady,
+  calculateRetailReadyWholesaleMarkup,
 } from '@/lib/calculations';
 
 const formulaItemSchema = z.object({
@@ -1151,7 +1153,32 @@ export function ProductCalculator({
                 name="wholesale_markup"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Wholesale Markup (%)</FormLabel>
+                    <div className="flex items-center gap-2">
+                      <FormLabel>Wholesale Markup (%)</FormLabel>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="h-6 px-2 text-xs gap-1"
+                              onClick={() => {
+                                const retailMarkup = watchAll.retail_markup || 0;
+                                const suggestedMarkup = calculateRetailReadyWholesaleMarkup(retailMarkup);
+                                form.setValue('wholesale_markup', suggestedMarkup, { shouldDirty: true });
+                              }}
+                            >
+                              <Sparkles className="h-3 w-3" />
+                              Retail-Ready
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Sets wholesale markup to give retailers 70% margin</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
                     <FormControl>
                       <Input type="number" step="1" min="0" {...field} />
                     </FormControl>
