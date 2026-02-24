@@ -1,32 +1,35 @@
 
 
-# Add "Retail-Ready" Indicator
+# Add "Retail-Ready" Auto-Suggest Button for Wholesale Price
 
 ## What This Does
 
-When selling to retail stores, they typically need at least a **70% margin** -- meaning your wholesale price should be no more than ~30% of the retail price. This change adds a clear visual indicator showing whether your pricing is retail-ready.
+Adds a button next to the Wholesale Markup input that automatically calculates and sets the wholesale markup percentage so that retailers get exactly a 70% margin. The user keeps full control over both markup inputs but gets a one-click shortcut to hit the retail-ready target.
 
-The check: **((Retail Price - Wholesale Price) / Retail Price) >= 70%**
+## How It Works
+
+Given:
+- Retail Price = COGS x (1 + retail_markup / 100)
+- Wholesale needs to be 30% of Retail for a 70% retailer margin
+
+The auto-suggest calculates: **wholesale_markup = (retail_markup + 100) x 0.30 - 100**
+
+For example, with a 300% retail markup (4x COGS), wholesale markup = 400 x 0.30 - 100 = **20%** (1.2x COGS), giving retailers exactly 70% margin.
 
 ## Changes
 
-### 1. `src/lib/calculations.ts` -- Add helper function
+### 1. `src/components/ProductCalculator.tsx` -- Add auto-suggest button
 
-Add `isRetailReady(wholesalePrice, retailPrice, threshold = 70)` that returns whether the retailer's margin meets the threshold, plus the actual retailer margin percentage.
+- Next to the "Wholesale Markup (%)" label, add a small "Retail-Ready" button
+- When clicked, it calculates the correct wholesale markup from the current retail markup and updates the form field
+- The button will be styled subtly (outline/ghost style, small size) so it doesn't clutter the form
+- A brief tooltip or description explains: "Sets wholesale to give retailers 70% margin"
 
-### 2. `src/components/ProductCalculator.tsx` -- Show indicator in pricing summary
+### 2. `src/lib/calculations.ts` -- Add helper function
 
-Below the wholesale/retail price boxes, add a status banner:
-- **Green with checkmark**: "Retail-Ready -- Retailers get X% margin (buying wholesale, selling retail)" when margin is 70% or above
-- **Yellow/amber with warning**: "Not Retail-Ready -- Retailers only get X% margin (70%+ recommended)" when below threshold
+Add `calculateRetailReadyWholesaleMarkup(retailMarkup, targetMargin = 70)` that returns the wholesale markup percentage needed to achieve the target retailer margin.
 
-### 3. `src/components/ProductCard.tsx` -- Show badge on product cards
+## No Database Changes Required
 
-Add a small colored badge below the pricing row:
-- Green "Retail-Ready" badge when the retailer margin is 70%+
-- Amber "Low Retail Margin" badge when below, with the actual percentage shown
-
-## What "Retailer Margin" Means Here
-
-This is **not** your margin -- it is the margin a **retail store** would earn if they bought from you at wholesale and sold at your suggested retail price. Retailers typically need 60-70%+ to cover their overhead.
+This is purely a UI convenience feature -- no schema or backend changes needed.
 
