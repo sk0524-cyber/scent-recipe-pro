@@ -100,7 +100,7 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
         </div>
 
         {/* Pricing summary */}
-        <div className="grid grid-cols-4 divide-x divide-border border-t border-border bg-muted/30">
+        <div className="grid grid-cols-3 divide-x divide-border border-t border-border bg-muted/30">
           <div className="p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">COGS{hasPackSize ? '/pack' : ''}</p>
             <p className="font-display text-lg font-semibold text-foreground">
@@ -130,29 +130,27 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
               {formatPercentage(calculateProfitMargin(retailPrice ?? 0, packCOGS ?? 0))} margin
             </p>
           </div>
-          <div className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Retailer Shelf</p>
-            <p className="font-display text-lg font-semibold text-accent-foreground">
-              {formatCurrency(calculateRetailerShelfPrice(wholesalePrice))}
-            </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              70% retailer margin
-            </p>
-          </div>
         </div>
 
         {/* Retail-Ready indicator */}
         {wholesalePrice > 0 && retailPrice > 0 && (() => {
           const { ready, retailerMargin } = isRetailReady(wholesalePrice, retailPrice);
+          const shelfPrice = calculateRetailerShelfPrice(wholesalePrice);
           return (
-            <div className={`px-5 py-2.5 border-t border-border text-xs font-medium flex items-center gap-1.5 ${
+            <div className={`px-5 py-2.5 border-t border-border text-xs font-medium ${
               ready
                 ? 'bg-green-50 text-green-700 dark:bg-green-950/30 dark:text-green-400'
                 : 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400'
             }`}>
-              <span>{ready ? '✓' : '⚠'}</span>
-              <span>{ready ? 'Retail-Ready' : `Low Retail Margin`}</span>
-              <span className="text-muted-foreground ml-auto">{retailerMargin.toFixed(1)}%</span>
+              <div className="flex items-center gap-1.5">
+                <span>{ready ? '✓' : '⚠'}</span>
+                <span>{ready ? 'Retail-Ready' : 'Low Retail Margin'}</span>
+                <span className="text-muted-foreground ml-auto">{retailerMargin.toFixed(1)}%</span>
+              </div>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="text-muted-foreground">Retailer Shelf Price</span>
+                <span className="ml-auto font-semibold">{formatCurrency(shelfPrice)}</span>
+              </div>
             </div>
           );
         })()}
