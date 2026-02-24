@@ -1,41 +1,25 @@
 
 
-# Add Suggested Retail Price for Wholesale Channel
+# Move Retailer Shelf Price Below Retail-Ready Indicator
 
-## What This Does
+## What Changes
 
-Adds a new price display showing what a retailer would likely charge customers when they buy your product at your wholesale price. This helps you see both your DTC (direct-to-consumer) retail price and the retailer's expected shelf price side by side.
+Remove the "Retailer Shelf" column from the 4-column pricing grid and instead display it as part of the Retail-Ready indicator banner at the bottom of the card.
 
-## How It Works
+## Details
 
-If your wholesale price is $14.50 and retailers need a 70% margin, the suggested retail price is:
+### `src/components/ProductCard.tsx`
 
-**Suggested Retail = Wholesale Price / 0.30 = $48.33** (rounded to nearest $0.50 = $48.50)
+1. **Pricing grid**: Revert from 4 columns back to 3 columns (COGS, Wholesale, DTC Retail) by removing the "Retailer Shelf" column (lines 133-141).
 
-This is the price a retailer would put on their shelf to achieve the standard 70% margin.
+2. **Retail-Ready indicator section**: Expand the existing banner (lines 144-158) to include the Retailer Shelf price. Below the "Retail-Ready" or "Low Retail Margin" line, add the retailer shelf price and its label so it reads something like:
 
-## Changes
+   ```
+   ⚠ Low Retail Margin          62.5%
+   Retailer Shelf Price         $48.50
+   ```
 
-### 1. Calculator pricing display (`src/components/ProductCalculator.tsx`)
+   This keeps the shelf price contextually paired with the margin status it relates to.
 
-- Expand the final prices section from a 2-column grid to a 3-column grid
-- Rename "Wholesale Price" to "Wholesale Price" (unchanged)
-- Rename "Retail Price" to "DTC Retail Price" to clarify it's your direct-to-consumer price
-- Add a third card: "Retailer Shelf Price" showing the suggested retail price a store would charge (wholesale / 0.30, rounded to nearest $0.50)
-- Include a small note: "Based on 70% retailer margin"
-
-### 2. Product card pricing display (`src/components/ProductCard.tsx`)
-
-- Expand the pricing grid from 3 columns to 4 columns
-- Add "Retailer Shelf" price alongside COGS, Wholesale, and DTC Retail
-- Show the retailer margin beneath it, matching the existing margin display style
-
-### 3. Calculation helper (`src/lib/calculations.ts`)
-
-- Add a `calculateRetailerShelfPrice(wholesalePrice, targetMargin = 70)` function
-- Formula: `wholesalePrice / (1 - targetMargin / 100)`, rounded to nearest $0.50
-
-### No database changes required
-
-This is a display-only feature calculated from existing data.
+No other files need to change.
 
