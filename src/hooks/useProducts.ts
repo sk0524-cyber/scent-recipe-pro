@@ -18,6 +18,7 @@ export interface Product {
   retail_markup: number;
   wholesale_markup: number;
   retailer_margin_target: number;
+  retailer_margin_percent: number;
   materials_cost_per_unit: number;
   packaging_cost_per_unit: number;
   labor_cost_per_unit: number;
@@ -64,6 +65,7 @@ export interface ProductFormData {
   retail_markup: number;
   wholesale_markup: number;
   retailer_margin_target: number;
+  retailer_margin_percent: number;
   materials_cost_per_unit: number;
   packaging_cost_per_unit: number;
   labor_cost_per_unit: number;

@@ -135,8 +135,9 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
         {/* Retail-Ready indicator */}
         {wholesalePrice > 0 && (() => {
           const targetMargin = (product as any).retailer_margin_target || 70;
+          const retailerMargin = (product as any).retailer_margin_percent || 50;
           const { ready, makerMargin } = isMakerMarginReady(wholesalePrice, packCOGS, targetMargin);
-          const shelfPrice = calculateRetailerShelfPrice(wholesalePrice, targetMargin);
+          const shelfPrice = calculateRetailerShelfPrice(wholesalePrice, retailerMargin);
           return (
             <div className={`px-5 py-2.5 border-t border-border text-xs font-medium ${
               ready

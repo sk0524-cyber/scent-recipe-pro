@@ -71,6 +71,7 @@ const formSchema = z.object({
   retail_markup: z.coerce.number().min(0),
   wholesale_markup: z.coerce.number().min(0),
   retailer_margin_target: z.coerce.number().min(30).max(90),
+  retailer_margin_percent: z.coerce.number().min(10).max(80),
   formula_items: z.array(formulaItemSchema),
   component_items: z.array(componentItemSchema),
 });
@@ -188,6 +189,7 @@ export function ProductCalculator({
       retail_markup: product?.retail_markup || 300,
       wholesale_markup: product?.wholesale_markup || 100,
       retailer_margin_target: (product as any)?.retailer_margin_target || 70,
+      retailer_margin_percent: (product as any)?.retailer_margin_percent || 50,
       formula_items: product?.formula_items?.map(item => ({
         material_id: item.material_id,
         percentage: item.percentage,
@@ -366,6 +368,7 @@ export function ProductCalculator({
       retail_markup: values.retail_markup,
       wholesale_markup: values.wholesale_markup,
       retailer_margin_target: values.retailer_margin_target,
+      retailer_margin_percent: values.retailer_margin_percent,
       materials_cost_per_unit: calculations.totalMaterialsCostPerUnit,
       packaging_cost_per_unit: calculations.totalPackagingCostPerUnit,
       labor_cost_per_unit: calculations.laborCostPerUnit,
@@ -1208,23 +1211,42 @@ export function ProductCalculator({
               />
             </div>
 
-            {/* Target Maker Margin */}
-            <FormField
-              control={form.control}
-              name="retailer_margin_target"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Target Wholesale Margin (%)</FormLabel>
-                  <FormControl>
-                    <Input type="number" step="1" min="30" max="90" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    Your target profit margin when selling wholesale. Click "Target Margin" above to auto-set the wholesale markup.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            {/* Target Maker Margin & Retailer Margin */}
+            <div className="grid gap-6 sm:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="retailer_margin_target"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Target Wholesale Margin (%)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="30" max="90" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Your profit goal. Click "Target Margin" above to auto-set the wholesale markup.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="retailer_margin_percent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Retailer Margin (%)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="10" max="80" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      The margin a retailer takes on your wholesale price to set the shelf price.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Final prices */}
             <div className="grid gap-4 sm:grid-cols-3 mt-6">
@@ -1255,10 +1277,10 @@ export function ProductCalculator({
                   Retailer Shelf Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
                 </p>
                 <p className="font-display text-3xl font-bold text-accent-foreground">
-                  {formatCurrency(calculateRetailerShelfPrice(calculations.wholesalePrice, watchAll.retailer_margin_target || 70))}
+                  {formatCurrency(calculateRetailerShelfPrice(calculations.wholesalePrice, watchAll.retailer_margin_percent || 50))}
                 </p>
                 <p className="text-xs text-accent-foreground/60 mt-1">
-                  Based on {watchAll.retailer_margin_target || 70}% retailer margin
+                  Based on {watchAll.retailer_margin_percent || 50}% retailer margin
                 </p>
               </div>
             </div>
