@@ -1182,7 +1182,7 @@ export function ProductCalculator({
                     <FormControl>
                       <Input type="number" step="1" min="0" {...field} />
                     </FormControl>
-                    <FormDescription>100% = 2× COGS</FormDescription>
+                    <FormDescription>{watchAll.wholesale_markup}% = {((watchAll.wholesale_markup || 0) / 100 + 1).toFixed(1)}× COGS</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1197,7 +1197,7 @@ export function ProductCalculator({
                     <FormControl>
                       <Input type="number" step="1" min="0" {...field} />
                     </FormControl>
-                    <FormDescription>300% = 4× COGS</FormDescription>
+                    <FormDescription>{watchAll.retail_markup}% = {((watchAll.retail_markup || 0) / 100 + 1).toFixed(1)}× COGS</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
