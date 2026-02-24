@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Product } from '@/hooks/useProducts';
-import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice, isRetailReady, calculateRetailerShelfPrice } from '@/lib/calculations';
+import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice, isMakerMarginReady, calculateRetailerShelfPrice } from '@/lib/calculations';
 
 interface ProductCardProps {
   product: Product;
@@ -133,9 +133,9 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
         </div>
 
         {/* Retail-Ready indicator */}
-        {wholesalePrice > 0 && retailPrice > 0 && (() => {
+        {wholesalePrice > 0 && (() => {
           const targetMargin = (product as any).retailer_margin_target || 70;
-          const { ready, retailerMargin } = isRetailReady(wholesalePrice, retailPrice, targetMargin);
+          const { ready, makerMargin } = isMakerMarginReady(wholesalePrice, packCOGS, targetMargin);
           const shelfPrice = calculateRetailerShelfPrice(wholesalePrice, targetMargin);
           return (
             <div className={`px-5 py-2.5 border-t border-border text-xs font-medium ${
@@ -145,8 +145,8 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
             }`}>
               <div className="flex items-center gap-1.5">
                 <span>{ready ? '✓' : '⚠'}</span>
-                <span>{ready ? 'Retail-Ready' : 'Low Retail Margin'}</span>
-                <span className="text-muted-foreground ml-auto">{retailerMargin.toFixed(1)}%</span>
+                <span>{ready ? 'On Target' : 'Below Target'}</span>
+                <span className="text-muted-foreground ml-auto">{makerMargin.toFixed(1)}% wholesale margin</span>
               </div>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="text-muted-foreground">Retailer Shelf Price</span>

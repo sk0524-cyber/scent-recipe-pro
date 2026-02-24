@@ -41,7 +41,7 @@ import {
   calculateRetailPrice,
   calculatePackCOGS,
   formatCurrency,
-  isRetailReady,
+  isMakerMarginReady,
   calculateRetailReadyWholesaleMarkup,
   calculateRetailerShelfPrice,
 } from '@/lib/calculations';
@@ -1168,18 +1168,17 @@ export function ProductCalculator({
                               size="sm"
                               className="h-6 px-2 text-xs gap-1"
                               onClick={() => {
-                                const retailMarkup = watchAll.retail_markup || 0;
                                 const targetMargin = watchAll.retailer_margin_target || 70;
-                                const suggestedMarkup = calculateRetailReadyWholesaleMarkup(retailMarkup, targetMargin);
+                                const suggestedMarkup = calculateRetailReadyWholesaleMarkup(0, targetMargin);
                                 form.setValue('wholesale_markup', suggestedMarkup, { shouldDirty: true });
                               }}
                             >
                               <Sparkles className="h-3 w-3" />
-                              Retail-Ready
+                              Target Margin
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Sets wholesale markup to give retailers {watchAll.retailer_margin_target || 70}% margin</p>
+                            <p>Sets wholesale markup so you keep {watchAll.retailer_margin_target || 70}% margin on wholesale sales</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -1209,18 +1208,18 @@ export function ProductCalculator({
               />
             </div>
 
-            {/* Target Retailer Margin */}
+            {/* Target Maker Margin */}
             <FormField
               control={form.control}
               name="retailer_margin_target"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Target Retailer Margin (%)</FormLabel>
+                  <FormLabel>Target Wholesale Margin (%)</FormLabel>
                   <FormControl>
                     <Input type="number" step="1" min="30" max="90" {...field} />
                   </FormControl>
                   <FormDescription>
-                    The margin retailers need when selling at your DTC retail price. Affects the Retail-Ready indicator and Retailer Shelf Price.
+                    Your target profit margin when selling wholesale. Click "Target Margin" above to auto-set the wholesale markup.
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -1269,10 +1268,11 @@ export function ProductCalculator({
               </div>
             )}
 
-            {/* Retail-Ready Indicator */}
-            {calculations.wholesalePrice > 0 && calculations.retailPrice > 0 && (() => {
+            {/* Maker Margin Indicator */}
+            {calculations.wholesalePrice > 0 && (() => {
               const targetMargin = watchAll.retailer_margin_target || 70;
-              const { ready, retailerMargin } = isRetailReady(calculations.wholesalePrice, calculations.retailPrice, targetMargin);
+              const packCOGS = calculations.totalCOGS * (watchAll.selling_pack_size || 1);
+              const { ready, makerMargin } = isMakerMarginReady(calculations.wholesalePrice, packCOGS, targetMargin);
               return (
                 <Alert className={ready
                   ? 'border-green-500/50 bg-green-50 dark:bg-green-950/30 [&>svg]:text-green-600 dark:[&>svg]:text-green-400'
@@ -1281,8 +1281,8 @@ export function ProductCalculator({
                   {ready ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
                   <AlertDescription className={ready ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}>
                     {ready
-                      ? `Retail-Ready — Retailers get ${retailerMargin.toFixed(1)}% margin (buying wholesale, selling retail)`
-                      : `Not Retail-Ready — Retailers only get ${retailerMargin.toFixed(1)}% margin (${targetMargin}%+ recommended)`
+                      ? `On Target — You keep ${makerMargin.toFixed(1)}% margin on wholesale sales`
+                      : `Below Target — You only keep ${makerMargin.toFixed(1)}% margin on wholesale (${targetMargin}%+ target)`
                     }
                   </AlertDescription>
                 </Alert>

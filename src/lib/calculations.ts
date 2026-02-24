@@ -310,30 +310,45 @@ export function calculateProfitMargin(sellingPrice: number, cogs: number): numbe
 }
 
 /**
- * Calculate the wholesale markup % needed to give retailers a target margin
- * Formula: wholesale_markup = (retail_markup + 100) × (1 - targetMargin/100) - 100
+ * Calculate the wholesale markup % needed for the maker to achieve a target margin
+ * Maker margin = (wholesale - COGS) / wholesale
+ * wholesale = COGS × (1 + markup/100)
+ * So: margin = markup / (100 + markup)
+ * Solving for markup: markup = 100 × targetMargin / (100 - targetMargin)
  */
 export function calculateRetailReadyWholesaleMarkup(
-  retailMarkup: number,
+  _retailMarkup: number,
   targetMargin: number = 70
 ): number {
-  const result = (retailMarkup + 100) * (1 - targetMargin / 100) - 100;
+  if (targetMargin >= 100) return Infinity;
+  const result = 100 * targetMargin / (100 - targetMargin);
   return Math.max(0, Math.round(result * 10) / 10);
 }
 
 /**
- * Check if pricing is retail-ready
- * Retailer margin = ((retailPrice - wholesalePrice) / retailPrice) * 100
- * Retailers typically need 60-70%+ margin to cover their overhead
- */
-/**
  * Calculate the suggested retailer shelf price
- * Formula: wholesalePrice / (1 - targetMargin / 100), rounded to nearest $0.50
+ * Formula: wholesalePrice / (1 - retailerMargin / 100), rounded to nearest $0.50
+ * Note: retailerMargin here is derived from the maker's target — retailers typically
+ * mark up from wholesale. We estimate shelf price assuming a standard retailer margin.
  */
 export function calculateRetailerShelfPrice(wholesalePrice: number, targetMargin: number = 70): number {
   if (wholesalePrice <= 0 || targetMargin >= 100) return 0;
   const price = wholesalePrice / (1 - targetMargin / 100);
   return roundToNearestHalf(price);
+}
+
+/**
+ * Check if the maker's wholesale margin meets the target
+ * Maker margin = (wholesalePrice - COGS) / wholesalePrice × 100
+ */
+export function isMakerMarginReady(
+  wholesalePrice: number,
+  cogs: number,
+  targetMargin: number = 70
+): { ready: boolean; makerMargin: number } {
+  if (wholesalePrice <= 0) return { ready: false, makerMargin: 0 };
+  const makerMargin = ((wholesalePrice - cogs) / wholesalePrice) * 100;
+  return { ready: makerMargin >= targetMargin, makerMargin };
 }
 
 export function isRetailReady(
