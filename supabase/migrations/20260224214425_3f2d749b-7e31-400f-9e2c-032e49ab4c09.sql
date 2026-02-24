@@ -1,0 +1,1 @@
+ALTER TABLE public.products ADD COLUMN retailer_margin_target numeric NOT NULL DEFAULT 70;

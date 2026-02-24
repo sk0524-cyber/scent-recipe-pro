@@ -17,6 +17,7 @@ export interface Product {
   shipping_overhead_per_batch: number;
   retail_markup: number;
   wholesale_markup: number;
+  retailer_margin_target: number;
   materials_cost_per_unit: number;
   packaging_cost_per_unit: number;
   labor_cost_per_unit: number;
@@ -62,6 +63,7 @@ export interface ProductFormData {
   shipping_overhead_per_batch: number;
   retail_markup: number;
   wholesale_markup: number;
+  retailer_margin_target: number;
   materials_cost_per_unit: number;
   packaging_cost_per_unit: number;
   labor_cost_per_unit: number;

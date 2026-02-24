@@ -70,6 +70,7 @@ const formSchema = z.object({
   shipping_overhead_per_batch: z.coerce.number().min(0),
   retail_markup: z.coerce.number().min(0),
   wholesale_markup: z.coerce.number().min(0),
+  retailer_margin_target: z.coerce.number().min(30).max(90),
   formula_items: z.array(formulaItemSchema),
   component_items: z.array(componentItemSchema),
 });
@@ -186,6 +187,7 @@ export function ProductCalculator({
       shipping_overhead_per_batch: product?.shipping_overhead_per_batch || 0,
       retail_markup: product?.retail_markup || 300,
       wholesale_markup: product?.wholesale_markup || 100,
+      retailer_margin_target: (product as any)?.retailer_margin_target || 70,
       formula_items: product?.formula_items?.map(item => ({
         material_id: item.material_id,
         percentage: item.percentage,
@@ -363,6 +365,7 @@ export function ProductCalculator({
       shipping_overhead_per_batch: values.shipping_overhead_per_batch,
       retail_markup: values.retail_markup,
       wholesale_markup: values.wholesale_markup,
+      retailer_margin_target: values.retailer_margin_target,
       materials_cost_per_unit: calculations.totalMaterialsCostPerUnit,
       packaging_cost_per_unit: calculations.totalPackagingCostPerUnit,
       labor_cost_per_unit: calculations.laborCostPerUnit,
@@ -1166,7 +1169,8 @@ export function ProductCalculator({
                               className="h-6 px-2 text-xs gap-1"
                               onClick={() => {
                                 const retailMarkup = watchAll.retail_markup || 0;
-                                const suggestedMarkup = calculateRetailReadyWholesaleMarkup(retailMarkup);
+                                const targetMargin = watchAll.retailer_margin_target || 70;
+                                const suggestedMarkup = calculateRetailReadyWholesaleMarkup(retailMarkup, targetMargin);
                                 form.setValue('wholesale_markup', suggestedMarkup, { shouldDirty: true });
                               }}
                             >
@@ -1175,7 +1179,7 @@ export function ProductCalculator({
                             </Button>
                           </TooltipTrigger>
                           <TooltipContent>
-                            <p>Sets wholesale markup to give retailers 70% margin</p>
+                            <p>Sets wholesale markup to give retailers {watchAll.retailer_margin_target || 70}% margin</p>
                           </TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
@@ -1204,6 +1208,24 @@ export function ProductCalculator({
                 )}
               />
             </div>
+
+            {/* Target Retailer Margin */}
+            <FormField
+              control={form.control}
+              name="retailer_margin_target"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Target Retailer Margin (%)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="1" min="30" max="90" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    The margin retailers need when selling at your DTC retail price. Affects the Retail-Ready indicator and Retailer Shelf Price.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
             {/* Final prices */}
             <div className="grid gap-4 sm:grid-cols-3 mt-6">
@@ -1234,10 +1256,10 @@ export function ProductCalculator({
                   Retailer Shelf Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
                 </p>
                 <p className="font-display text-3xl font-bold text-accent-foreground">
-                  {formatCurrency(calculateRetailerShelfPrice(calculations.wholesalePrice))}
+                  {formatCurrency(calculateRetailerShelfPrice(calculations.wholesalePrice, watchAll.retailer_margin_target || 70))}
                 </p>
                 <p className="text-xs text-accent-foreground/60 mt-1">
-                  Based on 70% retailer margin
+                  Based on {watchAll.retailer_margin_target || 70}% retailer margin
                 </p>
               </div>
             </div>
@@ -1249,7 +1271,8 @@ export function ProductCalculator({
 
             {/* Retail-Ready Indicator */}
             {calculations.wholesalePrice > 0 && calculations.retailPrice > 0 && (() => {
-              const { ready, retailerMargin } = isRetailReady(calculations.wholesalePrice, calculations.retailPrice);
+              const targetMargin = watchAll.retailer_margin_target || 70;
+              const { ready, retailerMargin } = isRetailReady(calculations.wholesalePrice, calculations.retailPrice, targetMargin);
               return (
                 <Alert className={ready
                   ? 'border-green-500/50 bg-green-50 dark:bg-green-950/30 [&>svg]:text-green-600 dark:[&>svg]:text-green-400'
@@ -1259,7 +1282,7 @@ export function ProductCalculator({
                   <AlertDescription className={ready ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}>
                     {ready
                       ? `Retail-Ready — Retailers get ${retailerMargin.toFixed(1)}% margin (buying wholesale, selling retail)`
-                      : `Not Retail-Ready — Retailers only get ${retailerMargin.toFixed(1)}% margin (70%+ recommended)`
+                      : `Not Retail-Ready — Retailers only get ${retailerMargin.toFixed(1)}% margin (${targetMargin}%+ recommended)`
                     }
                   </AlertDescription>
                 </Alert>
