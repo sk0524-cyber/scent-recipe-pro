@@ -1,57 +1,32 @@
 
-# Simplify Product Details Wording for Incense
 
-## Problem
-The current labels -- "Units per Batch," "Units per Selling Pack," and "Units per Bundle" (fill weight) -- are confusing. You want clear, intuitive language that maps to how you actually think about your incense production:
+# Add "Retail-Ready" Indicator
 
-- I make **50 sticks** per batch
-- I sell them **10 sticks per pack**
-- That gives me **5 packs per batch**
+## What This Does
+
+When selling to retail stores, they typically need at least a **70% margin** -- meaning your wholesale price should be no more than ~30% of the retail price. This change adds a clear visual indicator showing whether your pricing is retail-ready.
+
+The check: **((Retail Price - Wholesale Price) / Retail Price) >= 70%**
 
 ## Changes
 
-### 1. Update field labels and helper text in `src/components/ProductCalculator.tsx`
+### 1. `src/lib/calculations.ts` -- Add helper function
 
-For **Incense** product type specifically, change the wording:
+Add `isRetailReady(wholesalePrice, retailPrice, threshold = 70)` that returns whether the retailer's margin meets the threshold, plus the actual retailer margin percentage.
 
-| Current Label | New Label (Incense) | Helper Text |
-|---|---|---|
-| Units per Batch | **Sticks per Batch** | How many individual sticks you make in one batch |
-| Units per Selling Pack | **Sticks per Pack** | How many sticks go into one sellable pack |
-| Fill Weight (Units per Bundle) | Remove / hide for Incense | Not needed -- the "bundle" concept is replaced by the pack size |
+### 2. `src/components/ProductCalculator.tsx` -- Show indicator in pricing summary
 
-For **non-Incense** types, the labels stay the same as they are now.
+Below the wholesale/retail price boxes, add a status banner:
+- **Green with checkmark**: "Retail-Ready -- Retailers get X% margin (buying wholesale, selling retail)" when margin is 70% or above
+- **Yellow/amber with warning**: "Not Retail-Ready -- Retailers only get X% margin (70%+ recommended)" when below threshold
 
-### 2. Update the batch info summary
+### 3. `src/components/ProductCard.tsx` -- Show badge on product cards
 
-Currently shows: "Total batch size: 2500.00 bundle"
+Add a small colored badge below the pricing row:
+- Green "Retail-Ready" badge when the retailer margin is 70%+
+- Amber "Low Retail Margin" badge when below, with the actual percentage shown
 
-Change to show (for Incense):
-- **Sticks per batch:** 50
-- **Sticks per pack:** 10
-- **Packs per batch:** 5
+## What "Retailer Margin" Means Here
 
-### 3. Simplify Incense-specific behavior
+This is **not** your margin -- it is the margin a **retail store** would earn if they bought from you at wholesale and sold at your suggested retail price. Retailers typically need 60-70%+ to cover their overhead.
 
-For Incense, the `fill_weight_per_unit` field is currently labeled "Units per Bundle" and set to 50 -- this is being confused with the batch size. For Incense, we should:
-- Auto-set `fill_weight_per_unit` to `1` (each stick is one unit for formula cost purposes)
-- Hide the fill weight field since it is not meaningful for incense
-- Hide the Fill Unit dropdown for incense (it will stay as "bundle" internally)
-
-### 4. Update COGS summary labels
-
-When pack size > 1, show:
-- **COGS per stick:** $X.XX
-- **COGS per pack (10 sticks):** $X.XX
-
-Instead of generic "COGS per unit" and "COGS per pack of 10."
-
-## Technical Details
-
-All changes are in `src/components/ProductCalculator.tsx`:
-
-- Update `getProductGuidance()` for Incense to return clearer labels
-- Add conditional label logic: when `productType === 'Incense'`, use "Sticks per Batch" / "Sticks per Pack"
-- Hide `fill_weight_per_unit` and `fill_unit` fields when Incense is selected; auto-set fill weight to 1
-- Update the batch info summary block to use product-type-aware unit names (e.g., "sticks" for incense)
-- Update COGS summary to use "per stick" / "per pack (X sticks)" wording for Incense
