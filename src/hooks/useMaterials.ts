@@ -92,7 +92,7 @@ export function useMaterials() {
         description: 'Failed to add material. Please try again.',
         variant: 'destructive'
       });
-      console.error('Error creating material:', error);
+      if (import.meta.env.DEV) console.error('Error creating material:', error);
     }
   });
 
@@ -134,7 +134,7 @@ export function useMaterials() {
         description: 'Failed to update material. Please try again.',
         variant: 'destructive'
       });
-      console.error('Error updating material:', error);
+      if (import.meta.env.DEV) console.error('Error updating material:', error);
     }
   });
 
@@ -160,7 +160,7 @@ export function useMaterials() {
         description: 'Failed to delete material. It may be in use by a product.',
         variant: 'destructive'
       });
-      console.error('Error deleting material:', error);
+      if (import.meta.env.DEV) console.error('Error deleting material:', error);
     }
   });
 
