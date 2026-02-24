@@ -308,3 +308,18 @@ export function calculateProfitMargin(sellingPrice: number, cogs: number): numbe
   if (sellingPrice <= 0) return 0;
   return ((sellingPrice - cogs) / sellingPrice) * 100;
 }
+
+/**
+ * Check if pricing is retail-ready
+ * Retailer margin = ((retailPrice - wholesalePrice) / retailPrice) * 100
+ * Retailers typically need 60-70%+ margin to cover their overhead
+ */
+export function isRetailReady(
+  wholesalePrice: number,
+  retailPrice: number,
+  threshold: number = 70
+): { ready: boolean; retailerMargin: number } {
+  if (retailPrice <= 0) return { ready: false, retailerMargin: 0 };
+  const retailerMargin = ((retailPrice - wholesalePrice) / retailPrice) * 100;
+  return { ready: retailerMargin >= threshold, retailerMargin };
+}
