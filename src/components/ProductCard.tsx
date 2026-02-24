@@ -15,7 +15,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { Product } from '@/hooks/useProducts';
-import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice, isRetailReady } from '@/lib/calculations';
+import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice, isRetailReady, calculateRetailerShelfPrice } from '@/lib/calculations';
 
 interface ProductCardProps {
   product: Product;
@@ -100,7 +100,7 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
         </div>
 
         {/* Pricing summary */}
-        <div className="grid grid-cols-3 divide-x divide-border border-t border-border bg-muted/30">
+        <div className="grid grid-cols-4 divide-x divide-border border-t border-border bg-muted/30">
           <div className="p-4 text-center">
             <p className="text-xs text-muted-foreground mb-1">COGS{hasPackSize ? '/pack' : ''}</p>
             <p className="font-display text-lg font-semibold text-foreground">
@@ -122,12 +122,21 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
             </p>
           </div>
           <div className="p-4 text-center">
-            <p className="text-xs text-muted-foreground mb-1">Retail{hasPackSize ? '/pack' : ''}</p>
+            <p className="text-xs text-muted-foreground mb-1">DTC Retail{hasPackSize ? '/pack' : ''}</p>
             <p className="font-display text-lg font-semibold text-primary">
               {formatCurrency(retailPrice)}
             </p>
             <p className="text-xs text-green-600 dark:text-green-400 mt-0.5">
               {formatPercentage(calculateProfitMargin(retailPrice ?? 0, packCOGS ?? 0))} margin
+            </p>
+          </div>
+          <div className="p-4 text-center">
+            <p className="text-xs text-muted-foreground mb-1">Retailer Shelf</p>
+            <p className="font-display text-lg font-semibold text-accent-foreground">
+              {formatCurrency(calculateRetailerShelfPrice(wholesalePrice))}
+            </p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              70% retailer margin
             </p>
           </div>
         </div>

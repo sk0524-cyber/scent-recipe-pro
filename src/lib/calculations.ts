@@ -326,6 +326,16 @@ export function calculateRetailReadyWholesaleMarkup(
  * Retailer margin = ((retailPrice - wholesalePrice) / retailPrice) * 100
  * Retailers typically need 60-70%+ margin to cover their overhead
  */
+/**
+ * Calculate the suggested retailer shelf price
+ * Formula: wholesalePrice / (1 - targetMargin / 100), rounded to nearest $0.50
+ */
+export function calculateRetailerShelfPrice(wholesalePrice: number, targetMargin: number = 70): number {
+  if (wholesalePrice <= 0 || targetMargin >= 100) return 0;
+  const price = wholesalePrice / (1 - targetMargin / 100);
+  return roundToNearestHalf(price);
+}
+
 export function isRetailReady(
   wholesalePrice: number,
   retailPrice: number,
