@@ -159,6 +159,7 @@ export function ProductCalculator({
       component_items: product?.component_items?.map(item => ({
         material_id: item.material_id,
         quantity_per_unit: item.quantity_per_unit,
+        cost_basis: item.cost_basis || 'unit' as const,
       })) || [],
     },
   });
@@ -239,6 +240,7 @@ export function ProductCalculator({
     const componentItems = watchAll.component_items.map(item => ({
       material_id: item.material_id,
       quantity_per_unit: item.quantity_per_unit,
+      cost_basis: item.cost_basis || 'unit' as const,
     }));
 
     const { itemCosts: formulaCosts, totalMaterialsCostPerUnit } = calculateFormulaCosts(
@@ -250,7 +252,8 @@ export function ProductCalculator({
 
     const { itemCosts: componentCosts, totalPackagingCostPerUnit } = calculateComponentCosts(
       componentItems,
-      materials
+      materials,
+      watchAll.selling_pack_size || 1
     );
 
     const laborCostPerUnit = calculateLaborCostPerUnit(
@@ -276,6 +279,8 @@ export function ProductCalculator({
 
     const totalPercentage = formulaItems.reduce((sum, item) => sum + (Number(item.percentage) || 0), 0);
 
+    const packCOGS = totalCOGS * (watchAll.selling_pack_size || 1);
+
     return {
       totalBatchWeight,
       formulaCosts,
@@ -285,6 +290,7 @@ export function ProductCalculator({
       laborCostPerUnit,
       shippingCostPerUnit,
       totalCOGS,
+      packCOGS,
       wholesalePrice,
       retailPrice,
       totalPercentage,
@@ -326,6 +332,7 @@ export function ProductCalculator({
         .map(item => ({
           material_id: item.material_id!,
           quantity_per_unit: item.quantity_per_unit!,
+          cost_basis: item.cost_basis || 'unit' as const,
         })),
     };
     onSave(formData);
@@ -547,6 +554,7 @@ export function ProductCalculator({
           materials={materials}
           componentFieldArray={componentFieldArray}
           guidance={guidance}
+          unitName={unitName}
         />
 
         {/* Labor & Overhead */}

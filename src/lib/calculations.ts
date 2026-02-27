@@ -30,6 +30,7 @@ export interface ComponentItem {
   id?: string;
   material_id: string;
   quantity_per_unit: number;
+  cost_basis?: 'unit' | 'pack';
   material?: Material;
 }
 
@@ -186,15 +187,19 @@ export function calculateFormulaCosts(
 
 /**
  * Calculate component costs for a product
+ * For 'pack' cost_basis items, the cost is divided by sellingPackSize
+ * to get the per-unit contribution
  */
 export function calculateComponentCosts(
   componentItems: ComponentItem[],
-  materials: Material[]
+  materials: Material[],
+  sellingPackSize: number = 1
 ): {
   itemCosts: Array<{
     material: Material;
     quantityPerUnit: number;
     costPerUnit: number;
+    costBasis: 'unit' | 'pack';
   }>;
   totalPackagingCostPerUnit: number;
 } {
@@ -204,18 +209,26 @@ export function calculateComponentCosts(
       const material = materials.find(m => m.id === item.material_id);
       if (!material) return null;
 
-      const costPerUnit = item.quantity_per_unit * material.cost_per_unit;
+      const costBasis = item.cost_basis || 'unit';
+      const rawCost = item.quantity_per_unit * material.cost_per_unit;
+      
+      // For per-pack items, divide cost across the pack to get per-unit cost
+      const costPerUnit = costBasis === 'pack' && sellingPackSize > 1
+        ? rawCost / sellingPackSize
+        : rawCost;
 
       return {
         material,
         quantityPerUnit: item.quantity_per_unit,
-        costPerUnit
+        costPerUnit,
+        costBasis,
       };
     })
     .filter(Boolean) as Array<{
       material: Material;
       quantityPerUnit: number;
       costPerUnit: number;
+      costBasis: 'unit' | 'pack';
     }>;
 
   const totalPackagingCostPerUnit = itemCosts.reduce((sum, item) => sum + item.costPerUnit, 0);

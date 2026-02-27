@@ -13,6 +13,7 @@ export const formulaItemSchema = z.object({
 export const componentItemSchema = z.object({
   material_id: z.string(),
   quantity_per_unit: z.coerce.number().min(0),
+  cost_basis: z.enum(['unit', 'pack']).default('unit'),
 });
 
 export const formSchema = z.object({
@@ -50,6 +51,7 @@ export interface ComponentItemCost {
   material: Material;
   quantityPerUnit: number;
   costPerUnit: number;
+  costBasis: 'unit' | 'pack';
 }
 
 export interface Calculations {
@@ -61,6 +63,7 @@ export interface Calculations {
   laborCostPerUnit: number;
   shippingCostPerUnit: number;
   totalCOGS: number;
+  packCOGS: number;
   wholesalePrice: number;
   retailPrice: number;
   totalPercentage: number;

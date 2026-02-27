@@ -44,6 +44,7 @@ export interface ComponentItem {
   product_id: string;
   material_id: string;
   quantity_per_unit: number;
+  cost_basis: 'unit' | 'pack';
 }
 
 export interface ProductWithItems extends Product {
@@ -81,6 +82,7 @@ export interface ProductFormData {
   component_items: Array<{
     material_id: string;
     quantity_per_unit: number;
+    cost_basis?: 'unit' | 'pack';
   }>;
 }
 
@@ -171,7 +173,8 @@ export function useProducts() {
           .map(item => ({
             product_id: product.id,
             material_id: item.material_id,
-            quantity_per_unit: item.quantity_per_unit
+            quantity_per_unit: item.quantity_per_unit,
+            cost_basis: item.cost_basis || 'unit'
           }));
 
         if (componentData.length > 0) {
@@ -244,7 +247,8 @@ export function useProducts() {
           .map(item => ({
             product_id: id,
             material_id: item.material_id,
-            quantity_per_unit: item.quantity_per_unit
+            quantity_per_unit: item.quantity_per_unit,
+            cost_basis: item.cost_basis || 'unit'
           }));
 
         if (componentData.length > 0) {
@@ -291,7 +295,8 @@ export function useProducts() {
         })),
         component_items: component_items.map(item => ({
           material_id: item.material_id,
-          quantity_per_unit: item.quantity_per_unit
+          quantity_per_unit: item.quantity_per_unit,
+          cost_basis: item.cost_basis || 'unit'
         }))
       };
 

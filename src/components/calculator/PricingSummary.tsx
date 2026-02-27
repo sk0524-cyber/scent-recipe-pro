@@ -72,7 +72,7 @@ export function PricingSummary({
                 COGS per pack ({watchAll.selling_pack_size} {unitNamePlural})
               </span>
               <span className="font-display text-xl font-bold text-primary">
-                {formatCurrency(calculations.totalCOGS * watchAll.selling_pack_size)}
+                {formatCurrency(calculations.packCOGS)}
               </span>
             </div>
           )}
@@ -220,7 +220,7 @@ export function PricingSummary({
         {/* Maker Margin Indicator */}
         {calculations.wholesalePrice > 0 && (() => {
           const targetMargin = watchAll.retailer_margin_target || 70;
-          const packCOGS = calculations.totalCOGS * (watchAll.selling_pack_size || 1);
+          const packCOGS = calculations.packCOGS;
           const { ready, makerMargin } = isMakerMarginReady(calculations.wholesalePrice, packCOGS, targetMargin);
           return (
             <Alert className={ready
