@@ -1,13 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Plus, Trash2, AlertTriangle, CheckCircle2, Info, Scale, Percent, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import {
   Form,
   FormControl,
@@ -24,11 +20,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
-import { PRODUCT_TYPES, FILL_UNITS, FORMULA_CATEGORIES, COMPONENT_CATEGORIES } from '@/lib/constants';
+import { PRODUCT_TYPES, FILL_UNITS } from '@/lib/constants';
 import { Material } from '@/hooks/useMaterials';
 import { ProductWithItems, ProductFormData } from '@/hooks/useProducts';
 import {
@@ -39,42 +32,10 @@ import {
   calculateTotalCOGS,
   calculateWholesalePrice,
   calculateRetailPrice,
-  calculatePackCOGS,
   formatCurrency,
-  isMakerMarginReady,
-  calculateRetailReadyWholesaleMarkup,
-  calculateRetailerShelfPrice,
 } from '@/lib/calculations';
-
-const formulaItemSchema = z.object({
-  material_id: z.string(),
-  percentage: z.coerce.number().min(0).max(100),
-  slot_type: z.string().optional(),
-});
-
-const componentItemSchema = z.object({
-  material_id: z.string(),
-  quantity_per_unit: z.coerce.number().min(0),
-});
-
-const formSchema = z.object({
-  name: z.string().min(1, 'Product name is required').max(200),
-  product_type: z.string().min(1, 'Product type is required'),
-  units_per_batch: z.coerce.number().min(1, 'Must produce at least 1 unit'),
-  selling_pack_size: z.coerce.number().min(1, 'Pack size must be at least 1'),
-  fill_weight_per_unit: z.coerce.number().min(0.001, 'Fill weight must be greater than 0'),
-  fill_unit: z.string().min(1, 'Fill unit is required'),
-  reed_stick_count: z.coerce.number().min(0).optional(),
-  labor_rate_per_hour: z.coerce.number().min(0),
-  labor_hours_per_batch: z.coerce.number().min(0),
-  shipping_overhead_per_batch: z.coerce.number().min(0),
-  retail_markup: z.coerce.number().min(0),
-  wholesale_markup: z.coerce.number().min(0),
-  retailer_margin_target: z.coerce.number().min(30).max(90),
-  retailer_margin_percent: z.coerce.number().min(10).max(80),
-  formula_items: z.array(formulaItemSchema),
-  component_items: z.array(componentItemSchema),
-});
+import { formSchema, FormValues, Calculations } from './calculator';
+import { FormulaSection, ComponentsSection, PricingSummary } from './calculator';
 
 interface ProductCalculatorProps {
   product?: ProductWithItems | null;
@@ -172,8 +133,8 @@ export function ProductCalculator({
   const initialProductType = product?.product_type || 'Candle';
   const [formulaInputMode, setFormulaInputMode] = useState<'percentage' | 'weight'>('percentage');
   const [weights, setWeights] = useState<Record<number, number>>({});
-  
-  const form = useForm<z.infer<typeof formSchema>>({
+
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: product?.name || '',
@@ -202,21 +163,12 @@ export function ProductCalculator({
     },
   });
 
-  const {
-    fields: formulaFields,
-    append: appendFormula,
-    remove: removeFormula,
-    replace: replaceFormula,
-  } = useFieldArray({
+  const formulaFieldArray = useFieldArray({
     control: form.control,
     name: 'formula_items',
   });
 
-  const {
-    fields: componentFields,
-    append: appendComponent,
-    remove: removeComponent,
-  } = useFieldArray({
+  const componentFieldArray = useFieldArray({
     control: form.control,
     name: 'component_items',
   });
@@ -229,10 +181,9 @@ export function ProductCalculator({
   const isIncense = productType === 'Incense';
   const isFlexibleFormula = !isCandle && !isWaxMelt;
 
-  // Incense-specific unit name
   const unitName = isIncense ? 'stick' : 'unit';
   const unitNamePlural = isIncense ? 'sticks' : 'units';
-  
+
   const guidance = getProductGuidance(productType);
   const availableFillUnits = getDefaultFillUnits(productType);
 
@@ -240,28 +191,26 @@ export function ProductCalculator({
   useEffect(() => {
     if (!product) {
       const newDefaults = getDefaultFormulaItems(productType);
-      replaceFormula(newDefaults);
-      
-      // Set appropriate default fill unit
+      formulaFieldArray.replace(newDefaults);
+
       const defaultUnits = getDefaultFillUnits(productType);
       if (!defaultUnits.includes(watchAll.fill_unit)) {
         form.setValue('fill_unit', defaultUnits[0]);
       }
 
-      // For Incense, auto-set fill_weight_per_unit to 1 (each stick = 1 unit)
       if (productType === 'Incense') {
         form.setValue('fill_weight_per_unit', 1);
       }
     }
-  }, [productType, product, replaceFormula, form, watchAll.fill_unit]);
+  }, [productType, product, formulaFieldArray.replace, form, watchAll.fill_unit]);
 
   // Sync weights to percentages when in weight mode
   useEffect(() => {
     if (formulaInputMode !== 'weight') return;
     const totalWeight = Object.values(weights).reduce((sum, w) => sum + (w || 0), 0);
     if (totalWeight <= 0) return;
-    
-    formulaFields.forEach((_, index) => {
+
+    formulaFieldArray.fields.forEach((_, index) => {
       const w = weights[index] || 0;
       const pct = (w / totalWeight) * 100;
       const currentPct = watchAll.formula_items[index]?.percentage;
@@ -270,27 +219,16 @@ export function ProductCalculator({
         form.setValue(`formula_items.${index}.percentage`, roundedPct, { shouldDirty: true });
       }
     });
-  }, [weights, formulaInputMode, formulaFields.length]);
+  }, [weights, formulaInputMode, formulaFieldArray.fields.length]);
 
   const handleWeightChange = useCallback((index: number, value: number) => {
     setWeights(prev => ({ ...prev, [index]: value }));
   }, []);
 
-  const totalWeight = useMemo(() => 
-    Object.values(weights).reduce((sum, w) => sum + (w || 0), 0),
-    [weights]
-  );
-
-  // Filter materials by category for dropdowns
-  const waxMaterials = materials.filter(m => m.category === 'Wax');
-  const fragranceMaterials = materials.filter(m => m.category === 'Fragrance Oil');
-  const formulaMaterials = materials.filter(m => FORMULA_CATEGORIES.includes(m.category));
-  const componentMaterials = materials.filter(m => COMPONENT_CATEGORIES.includes(m.category));
-
   // Calculate totals
-  const calculations = useMemo(() => {
+  const calculations: Calculations = useMemo(() => {
     const totalBatchWeight = watchAll.units_per_batch * watchAll.fill_weight_per_unit;
-    
+
     const formulaItems = watchAll.formula_items.map((item, index) => ({
       material_id: item.material_id,
       percentage: item.percentage,
@@ -353,7 +291,7 @@ export function ProductCalculator({
     };
   }, [watchAll, materials, formulaInputMode, weights]);
 
-  const handleSubmit = (values: z.infer<typeof formSchema>) => {
+  const handleSubmit = (values: FormValues) => {
     const formData: ProductFormData = {
       name: values.name,
       product_type: values.product_type,
@@ -393,299 +331,10 @@ export function ProductCalculator({
     onSave(formData);
   };
 
-  // Render formula percentage progress
-  const renderFormulaProgress = () => {
-    if (calculations.totalPercentage === 0) return null;
-    
-    return (
-      <div className="space-y-2">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted-foreground">Formula Total</span>
-          <span className={`font-medium ${
-            calculations.totalPercentage === 100 
-              ? 'text-green-600 dark:text-green-400' 
-              : calculations.totalPercentage > 100 
-                ? 'text-orange-600 dark:text-orange-400' 
-                : 'text-destructive'
-          }`}>
-            {calculations.totalPercentage.toFixed(1)}%
-            {calculations.totalPercentage !== 100 && (
-              <span className="ml-1 text-xs font-normal">
-                ({calculations.totalPercentage < 100 ? `${(100 - calculations.totalPercentage).toFixed(1)}% remaining` : `${(calculations.totalPercentage - 100).toFixed(1)}% over`})
-              </span>
-            )}
-          </span>
-        </div>
-        <div className="relative">
-          <Progress 
-            value={Math.min(calculations.totalPercentage, 100)} 
-            className={`h-2 ${
-              calculations.totalPercentage === 100 
-                ? '[&>div]:bg-green-500' 
-                : calculations.totalPercentage > 100 
-                  ? '[&>div]:bg-orange-500' 
-                  : '[&>div]:bg-destructive'
-            }`}
-          />
-        </div>
-        {calculations.totalPercentage !== 100 && (
-          <div className={`flex items-center gap-2 text-xs ${
-            calculations.totalPercentage > 100 
-              ? 'text-orange-600 dark:text-orange-400' 
-              : 'text-destructive'
-          }`}>
-            <AlertTriangle className="h-3 w-3" />
-            <span>
-              {calculations.totalPercentage < 100 
-                ? 'Add more ingredients to reach 100%' 
-                : 'Reduce percentages to equal 100%'}
-            </span>
-          </div>
-        )}
-        {calculations.totalPercentage === 100 && (
-          <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
-            <CheckCircle2 className="h-3 w-3" />
-            <span>Formula is complete</span>
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // Helper to render percentage or weight input for a formula item
-  const renderFormulaInput = (index: number, label: string = '%', hideLabel: boolean = false) => {
-    if (formulaInputMode === 'weight') {
-      const pct = watchAll.formula_items[index]?.percentage || 0;
-      return (
-        <FormItem>
-          <FormLabel className={hideLabel ? 'sr-only' : ''}>oz</FormLabel>
-          <div className="flex items-center gap-2">
-            <Input
-              type="number"
-              step="0.01"
-              min="0"
-              value={weights[index] || ''}
-              onChange={(e) => handleWeightChange(index, parseFloat(e.target.value) || 0)}
-              placeholder="0"
-            />
-            <Badge variant="secondary" className="whitespace-nowrap text-xs">
-              {pct.toFixed(1)}%
-            </Badge>
-          </div>
-        </FormItem>
-      );
-    }
-
-    return (
-      <FormField
-        control={form.control}
-        name={`formula_items.${index}.percentage`}
-        render={({ field: inputField }) => (
-          <FormItem>
-            <FormLabel className={hideLabel ? 'sr-only' : ''}>{label}</FormLabel>
-            <FormControl>
-              <Input type="number" step="0.1" min="0" max="100" {...inputField} />
-            </FormControl>
-          </FormItem>
-        )}
-      />
-    );
-  };
-
-  // Render candle formula (3 wax slots + 1 fragrance)
-  const renderCandleFormula = () => (
-    <div className="space-y-4">
-      {/* Wax slots */}
-      {formulaFields.slice(0, 3).map((field, index) => (
-        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,auto]">
-          <FormField
-            control={form.control}
-            name={`formula_items.${index}.material_id`}
-            render={({ field: selectField }) => (
-              <FormItem>
-                <FormLabel>Wax {index + 1} {index > 0 && '(optional)'}</FormLabel>
-                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select wax" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {waxMaterials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          {renderFormulaInput(index)}
-        </div>
-      ))}
-
-      <Separator />
-
-      {/* Fragrance slot */}
-      {formulaFields.length >= 4 && (
-        <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
-          <FormField
-            control={form.control}
-            name={`formula_items.3.material_id`}
-            render={({ field: selectField }) => (
-              <FormItem>
-                <FormLabel>Fragrance Oil</FormLabel>
-                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fragrance" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {fragranceMaterials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          {renderFormulaInput(3)}
-        </div>
-      )}
-    </div>
-  );
-
-  // Render wax melt formula (1 wax + 1 fragrance)
-  const renderWaxMeltFormula = () => (
-    <div className="space-y-4">
-      {/* Single wax slot */}
-      {formulaFields.length >= 1 && (
-        <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
-          <FormField
-            control={form.control}
-            name={`formula_items.0.material_id`}
-            render={({ field: selectField }) => (
-              <FormItem>
-                <FormLabel>Wax</FormLabel>
-                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select wax" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {waxMaterials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          {renderFormulaInput(0)}
-        </div>
-      )}
-
-      <Separator />
-
-      {/* Fragrance slot */}
-      {formulaFields.length >= 2 && (
-        <div className="grid gap-4 sm:grid-cols-[1fr,auto]">
-          <FormField
-            control={form.control}
-            name={`formula_items.1.material_id`}
-            render={({ field: selectField }) => (
-              <FormItem>
-                <FormLabel>Fragrance Oil</FormLabel>
-                <Select onValueChange={(val) => selectField.onChange(val === "__none__" ? "" : val)} value={selectField.value || "__none__"}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select fragrance" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="__none__">None</SelectItem>
-                    {fragranceMaterials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          {renderFormulaInput(1)}
-        </div>
-      )}
-    </div>
-  );
-
-  // Render flexible formula (add/remove any materials)
-  const renderFlexibleFormula = () => (
-    <div className="space-y-4">
-      {formulaFields.map((field, index) => (
-        <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,auto,auto]">
-          <FormField
-            control={form.control}
-            name={`formula_items.${index}.material_id`}
-            render={({ field: selectField }) => (
-              <FormItem>
-                <FormLabel className={index > 0 ? 'sr-only' : ''}>Material</FormLabel>
-                <Select onValueChange={selectField.onChange} value={selectField.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select material" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {formulaMaterials.map((m) => (
-                      <SelectItem key={m.id} value={m.id}>
-                        {m.name} ({m.category})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-          {renderFormulaInput(index, '%', index > 0)}
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="mt-8"
-            onClick={() => removeFormula(index)}
-          >
-            <Trash2 className="h-4 w-4" />
-          </Button>
-        </div>
-      ))}
-      <Button
-        type="button"
-        variant="outline"
-        size="sm"
-        onClick={() => appendFormula({ material_id: '', percentage: 0, slot_type: 'custom' })}
-      >
-        <Plus className="h-4 w-4 mr-2" />
-        Add Formula Item
-      </Button>
-    </div>
-  );
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
-        {/* Basic Info */}
+        {/* Product Details */}
         <Card>
           <CardHeader>
             <CardTitle>Product Details</CardTitle>
@@ -812,7 +461,6 @@ export function ProductCalculator({
                 />
               )}
 
-              {/* Reed Stick Count - only for Reed Diffusers */}
               {isReedDiffuser && (
                 <FormField
                   control={form.control}
@@ -874,161 +522,34 @@ export function ProductCalculator({
         </Card>
 
         {/* Formula Section */}
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <CardTitle>Formula {formulaInputMode === 'weight' ? '(Weight → %)' : '(Percentages)'}</CardTitle>
-                <CardDescription>{guidance.formula}</CardDescription>
-              </div>
-              <ToggleGroup
-                type="single"
-                value={formulaInputMode}
-                onValueChange={(val) => {
-                  if (val) setFormulaInputMode(val as 'percentage' | 'weight');
-                }}
-                size="sm"
-                className="border rounded-lg p-1"
-              >
-                <ToggleGroupItem value="percentage" aria-label="Percentage mode" className="text-xs gap-1 px-3">
-                  <Percent className="h-3 w-3" />
-                  Percentage
-                </ToggleGroupItem>
-                <ToggleGroupItem value="weight" aria-label="Weight mode" className="text-xs gap-1 px-3">
-                  <Scale className="h-3 w-3" />
-                  Weight (oz)
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
-            {formulaInputMode === 'weight' && totalWeight > 0 && (
-              <div className="mt-2 text-sm text-muted-foreground">
-                Total weight: <span className="font-medium text-foreground">{totalWeight.toFixed(2)} oz</span>
-              </div>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Formula percentage progress bar */}
-            {renderFormulaProgress()}
-
-            {/* Render appropriate formula UI based on product type */}
-            {isCandle && renderCandleFormula()}
-            {isWaxMelt && renderWaxMeltFormula()}
-            {isFlexibleFormula && renderFlexibleFormula()}
-
-            {/* Formula cost breakdown */}
-            {calculations.formulaCosts.length > 0 && (
-              <div className="mt-6 rounded-lg bg-muted/50 p-4">
-                <h4 className="text-sm font-medium mb-3">Formula Cost Breakdown</h4>
-                <div className="space-y-2 text-sm">
-                  {calculations.formulaCosts.map((item, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {item.material.name} ({item.percentage}% = {item.amountPerBatch.toFixed(2)} {watchAll.fill_unit})
-                      </span>
-                      <span>{formatCurrency(item.costPerUnit, 4)}/unit</span>
-                    </div>
-                  ))}
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-medium">
-                    <span>Total Materials</span>
-                    <span className="text-primary">{formatCurrency(calculations.totalMaterialsCostPerUnit, 4)}/unit</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+        <FormulaSection
+          form={form}
+          calculations={calculations}
+          watchAll={watchAll}
+          materials={materials}
+          formulaFieldArray={formulaFieldArray}
+          guidance={guidance}
+          productType={productType}
+          isCandle={isCandle}
+          isWaxMelt={isWaxMelt}
+          isFlexibleFormula={isFlexibleFormula}
+          formulaInputMode={formulaInputMode}
+          setFormulaInputMode={setFormulaInputMode}
+          weights={weights}
+          onWeightChange={handleWeightChange}
+        />
 
         {/* Components Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Packaging & Components</CardTitle>
-            <CardDescription>{guidance.components}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {componentFields.map((field, index) => (
-              <div key={field.id} className="grid gap-4 sm:grid-cols-[1fr,100px,auto]">
-                <FormField
-                  control={form.control}
-                  name={`component_items.${index}.material_id`}
-                  render={({ field: selectField }) => (
-                    <FormItem>
-                      <FormLabel className={index > 0 ? 'sr-only' : ''}>Component</FormLabel>
-                      <Select onValueChange={selectField.onChange} value={selectField.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select component" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {componentMaterials.map((m) => (
-                            <SelectItem key={m.id} value={m.id}>
-                              {m.name} ({formatCurrency(m.cost_per_unit, 4)}/ea)
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name={`component_items.${index}.quantity_per_unit`}
-                  render={({ field: inputField }) => (
-                    <FormItem>
-                      <FormLabel className={index > 0 ? 'sr-only' : ''}>Qty</FormLabel>
-                      <FormControl>
-                        <Input type="number" step="1" min="0" {...inputField} />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className={index === 0 ? 'mt-8' : 'mt-0'}
-                  onClick={() => removeComponent(index)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => appendComponent({ material_id: '', quantity_per_unit: 1 })}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add Component
-            </Button>
+        <ComponentsSection
+          form={form}
+          calculations={calculations}
+          watchAll={watchAll}
+          materials={materials}
+          componentFieldArray={componentFieldArray}
+          guidance={guidance}
+        />
 
-            {/* Component cost breakdown */}
-            {calculations.componentCosts.length > 0 && (
-              <div className="mt-6 rounded-lg bg-muted/50 p-4">
-                <h4 className="text-sm font-medium mb-3">Component Cost Breakdown</h4>
-                <div className="space-y-2 text-sm">
-                  {calculations.componentCosts.map((item, index) => (
-                    <div key={index} className="flex justify-between">
-                      <span className="text-muted-foreground">
-                        {item.material.name} × {item.quantityPerUnit}
-                      </span>
-                      <span>{formatCurrency(item.costPerUnit, 4)}/unit</span>
-                    </div>
-                  ))}
-                  <Separator className="my-2" />
-                  <div className="flex justify-between font-medium">
-                    <span>Total Packaging</span>
-                    <span className="text-primary">{formatCurrency(calculations.totalPackagingCostPerUnit, 4)}/unit</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Labor & Overhead Section */}
+        {/* Labor & Overhead */}
         <Card>
           <CardHeader>
             <CardTitle>Labor & Overhead</CardTitle>
@@ -1106,212 +627,14 @@ export function ProductCalculator({
           </CardContent>
         </Card>
 
-        {/* Pricing Section */}
-        <Card variant="elevated">
-          <CardHeader>
-            <CardTitle>COGS & Pricing Summary</CardTitle>
-            <CardDescription>
-              Your calculated costs and suggested prices
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            {/* Cost breakdown */}
-            <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Materials cost per {unitName}</span>
-                <span>{formatCurrency(calculations.totalMaterialsCostPerUnit, 4)}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Packaging & components per {unitName}</span>
-                <span>{formatCurrency(calculations.totalPackagingCostPerUnit, 4)}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Labor per {unitName}</span>
-                <span>{formatCurrency(calculations.laborCostPerUnit, 4)}</span>
-              </div>
-              <div className="flex justify-between py-2 border-b border-border">
-                <span className="text-muted-foreground">Shipping/overhead per {unitName}</span>
-                <span>{formatCurrency(calculations.shippingCostPerUnit, 4)}</span>
-              </div>
-              <div className="flex justify-between py-3 bg-primary/5 rounded-lg px-4 -mx-4">
-                <span className="font-display text-lg font-semibold">COGS per {unitName}</span>
-                <span className="font-display text-xl font-bold text-primary">
-                  {formatCurrency(calculations.totalCOGS)}
-                </span>
-              </div>
-              {(watchAll.selling_pack_size || 1) > 1 && (
-                <div className="flex justify-between py-3 bg-accent/50 rounded-lg px-4 -mx-4">
-                  <span className="font-display text-lg font-semibold">
-                    COGS per pack ({watchAll.selling_pack_size} {unitNamePlural})
-                  </span>
-                  <span className="font-display text-xl font-bold text-primary">
-                    {formatCurrency(calculations.totalCOGS * watchAll.selling_pack_size)}
-                  </span>
-                </div>
-              )}
-            </div>
-
-            <Separator />
-
-            {/* Markup inputs */}
-            <div className="grid gap-6 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="wholesale_markup"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormLabel>Wholesale Markup (%)</FormLabel>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-6 px-2 text-xs gap-1"
-                              onClick={() => {
-                                const targetMargin = watchAll.retailer_margin_target || 70;
-                                const suggestedMarkup = calculateRetailReadyWholesaleMarkup(0, targetMargin);
-                                form.setValue('wholesale_markup', suggestedMarkup, { shouldDirty: true });
-                              }}
-                            >
-                              <Sparkles className="h-3 w-3" />
-                              Target Margin
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Sets wholesale markup so you keep {watchAll.retailer_margin_target || 70}% margin on wholesale sales</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                    <FormControl>
-                      <Input type="number" step="1" min="0" {...field} />
-                    </FormControl>
-                    <FormDescription>{watchAll.wholesale_markup}% = {((watchAll.wholesale_markup || 0) / 100 + 1).toFixed(1)}× COGS</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="retail_markup"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Retail Markup (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="1" min="0" {...field} />
-                    </FormControl>
-                    <FormDescription>{watchAll.retail_markup}% = {((watchAll.retail_markup || 0) / 100 + 1).toFixed(1)}× COGS</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Target Maker Margin & Retailer Margin */}
-            <div className="grid gap-6 sm:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="retailer_margin_target"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Target Wholesale Margin (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="1" min="30" max="90" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      Your profit goal. Click "Target Margin" above to auto-set the wholesale markup.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="retailer_margin_percent"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Retailer Margin (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="1" min="10" max="80" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      The margin a retailer takes on your wholesale price to set the shelf price.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Final prices */}
-            <div className="grid gap-4 sm:grid-cols-3 mt-6">
-              <div className="rounded-xl bg-secondary p-6 text-center">
-                <p className="text-sm text-secondary-foreground/70 mb-2">
-                  Wholesale Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
-                </p>
-                <p className="font-display text-3xl font-bold text-secondary-foreground">
-                  {formatCurrency(calculations.wholesalePrice)}
-                </p>
-                <p className="text-xs text-secondary-foreground/60 mt-1">
-                  Rounded to nearest $0.50
-                </p>
-              </div>
-              <div className="rounded-xl bg-primary p-6 text-center">
-                <p className="text-sm text-primary-foreground/70 mb-2">
-                  DTC Retail Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
-                </p>
-                <p className="font-display text-3xl font-bold text-primary-foreground">
-                  {formatCurrency(calculations.retailPrice)}
-                </p>
-                <p className="text-xs text-primary-foreground/60 mt-1">
-                  Rounded to nearest $0.50
-                </p>
-              </div>
-              <div className="rounded-xl bg-accent p-6 text-center">
-                <p className="text-sm text-accent-foreground/70 mb-2">
-                  Retailer Shelf Price{(watchAll.selling_pack_size || 1) > 1 ? ` (pack of ${watchAll.selling_pack_size})` : ''}
-                </p>
-                <p className="font-display text-3xl font-bold text-accent-foreground">
-                  {formatCurrency(calculateRetailerShelfPrice(calculations.wholesalePrice, watchAll.retailer_margin_percent || 50))}
-                </p>
-                <p className="text-xs text-accent-foreground/60 mt-1">
-                  Based on {watchAll.retailer_margin_percent || 50}% retailer margin
-                </p>
-              </div>
-            </div>
-            {(watchAll.selling_pack_size || 1) > 1 && (
-              <div className="rounded-lg bg-muted/50 p-4 text-sm text-muted-foreground">
-                <p><span className="font-medium text-foreground">Packs per batch:</span> {Math.floor(watchAll.units_per_batch / watchAll.selling_pack_size)}</p>
-              </div>
-            )}
-
-            {/* Maker Margin Indicator */}
-            {calculations.wholesalePrice > 0 && (() => {
-              const targetMargin = watchAll.retailer_margin_target || 70;
-              const packCOGS = calculations.totalCOGS * (watchAll.selling_pack_size || 1);
-              const { ready, makerMargin } = isMakerMarginReady(calculations.wholesalePrice, packCOGS, targetMargin);
-              return (
-                <Alert className={ready
-                  ? 'border-green-500/50 bg-green-50 dark:bg-green-950/30 [&>svg]:text-green-600 dark:[&>svg]:text-green-400'
-                  : 'border-amber-500/50 bg-amber-50 dark:bg-amber-950/30 [&>svg]:text-amber-600 dark:[&>svg]:text-amber-400'
-                }>
-                  {ready ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
-                  <AlertDescription className={ready ? 'text-green-800 dark:text-green-300' : 'text-amber-800 dark:text-amber-300'}>
-                    {ready
-                      ? `On Target — You keep ${makerMargin.toFixed(1)}% margin on wholesale sales`
-                      : `Below Target — You only keep ${makerMargin.toFixed(1)}% margin on wholesale (${targetMargin}%+ target)`
-                    }
-                  </AlertDescription>
-                </Alert>
-              );
-            })()}
-          </CardContent>
-        </Card>
+        {/* Pricing Summary */}
+        <PricingSummary
+          form={form}
+          calculations={calculations}
+          watchAll={watchAll}
+          unitName={unitName}
+          unitNamePlural={unitNamePlural}
+        />
 
         {/* Form Actions */}
         <div className="flex justify-end gap-4">
