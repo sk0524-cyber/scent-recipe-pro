@@ -11,6 +11,7 @@ import { ProductCalculator } from '@/components/ProductCalculator';
 import { ProductCard } from '@/components/ProductCard';
 import { exportProductsToCSV } from '@/lib/export';
 import { toast } from '@/hooks/use-toast';
+import { HelpSection } from '@/components/HelpSection';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -120,6 +121,15 @@ export default function Calculator() {
             </p>
           </div>
 
+          <HelpSection
+            title="How to Use the Calculator"
+            items={[
+              { title: 'Step-by-step workflow', content: '1. Name your product and choose a type (candle, diffuser, etc.)\n2. Set your batch size (how many units per batch)\n3. Add formula ingredients with percentages (e.g. 80% wax, 10% fragrance)\n4. Add packaging components (vessel, lid, label, box)\n5. Set labour hours and rate, plus any shipping overhead\n6. Review your COGS and suggested pricing at the bottom' },
+              { title: 'How do markup and margin work?', content: 'Markup is how much you add on top of your cost. A 2× markup on a $5 cost = $10 price.\n\nMargin is the percentage of the final price that is profit. A $10 price with $5 cost = 50% margin.\n\nYou can set separate wholesale and retail markups.' },
+              { title: 'Duplicating and exporting', content: 'Use the ⋯ menu on any product card to duplicate it (great for variations) or export all products to CSV from the main list.' },
+            ]}
+          />
+
           {materialsLoading || isLoadingProduct ? (
             <div className="space-y-6">
               <Card>
@@ -172,7 +182,7 @@ export default function Calculator() {
               Create products with formulas and see calculated COGS and pricing.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-3 shrink-0">
             {products.length > 0 && (
               <Button
                 variant="outline"
@@ -194,6 +204,15 @@ export default function Calculator() {
             </Button>
           </div>
         </div>
+
+        <HelpSection
+          title="How to Use the Calculator"
+          items={[
+            { title: 'Step-by-step workflow', content: '1. Click "New Product" to start\n2. Name your product and choose a type (candle, diffuser, etc.)\n3. Set your batch size and fill weight\n4. Add formula ingredients with percentages\n5. Add packaging components\n6. Set labour and shipping costs\n7. Review COGS and pricing at the bottom' },
+            { title: 'How do markup and margin work?', content: 'Markup is how much you add on top of your cost. A 2× markup on a $5 cost = $10 price.\n\nMargin is the percentage of the final price that is profit. A $10 price with $5 cost = 50% margin.' },
+            { title: 'Duplicating and exporting', content: 'Use the ⋯ menu on any product card to duplicate it (great for scent variations). You can also export all products to CSV using the Export button.' },
+          ]}
+        />
 
         {/* Products list */}
         {isLoading ? (

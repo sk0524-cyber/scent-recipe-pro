@@ -25,6 +25,7 @@ import { MaterialForm } from '@/components/MaterialForm';
 import { MaterialCard } from '@/components/MaterialCard';
 import { MATERIAL_CATEGORIES } from '@/lib/constants';
 import { Skeleton } from '@/components/ui/skeleton';
+import { HelpSection } from '@/components/HelpSection';
 
 export default function Materials() {
   const { materials, isLoading, createMaterial, updateMaterial, deleteMaterial } = useMaterials();
@@ -115,6 +116,15 @@ export default function Materials() {
             Add Material
           </Button>
         </div>
+
+        <HelpSection
+          title="How to Add Materials"
+          items={[
+            { title: 'What are materials?', content: 'Materials are the raw ingredients and packaging components you use to make your products — things like wax, fragrance oil, vessels, wicks, labels, and boxes.' },
+            { title: 'How do I add a material?', content: '1. Click the "Add Material" button above\n2. Choose a category (e.g. Wax, Fragrance, Packaging)\n3. Enter the material name\n4. Enter the cost you pay and the quantity you receive (e.g. $50 for 10 lbs)\n5. The cost per unit is calculated automatically\n6. Click Save' },
+            { title: 'Tip: Reuse across products', content: 'Once you add a material here, it becomes available in the Product Calculator for any product. Update a material\'s cost once and it automatically updates across all products that use it.' },
+          ]}
+        />
 
         {/* Search and filter */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
