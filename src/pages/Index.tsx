@@ -7,6 +7,7 @@ import { useMaterials } from '@/hooks/useMaterials';
 import { useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/ProductCard';
 import { formatCurrency } from '@/lib/calculations';
+import { HelpSection } from '@/components/HelpSection';
 
 
 const Index = () => {
@@ -53,6 +54,17 @@ const Index = () => {
           for candles, diffusers, room sprays, and more.
         </p>
       </div>
+
+      <HelpSection
+        title="Understanding Your Overview"
+        items={[
+          { title: 'What is "Avg Wholesale Margin"?', content: 'This is the average profit margin across all your products when sold at wholesale price. It shows how much profit you keep per unit after covering your costs of goods sold (COGS).' },
+          { title: 'What is "Avg DTC Margin"?', content: 'DTC stands for Direct-to-Consumer. This margin shows your average profit when selling directly to customers at your retail price — typically higher than wholesale since there\'s no middleman.' },
+          { title: 'What is "Avg Combined Margin"?', content: 'This is the average of your wholesale and DTC margins, giving you a blended view of overall profitability across both sales channels.' },
+          { title: 'What do the colours mean?', content: 'Green (Healthy) = margin is 60% or above\nAmber (Moderate) = margin is between 40% and 59%\nRed (Low) = margin is below 40%\n\nHigher margins give you more room for discounts, marketing, and unexpected costs.' },
+          { title: 'What are "Avg Cost per Unit" and "Avg Retail Price"?', content: '"Avg Cost per Unit" is the average COGS across all your products — what it costs you to make one unit.\n\n"Avg Retail Price" is the average suggested retail price across your products.' },
+        ]}
+      />
 
       {/* Quick action cards */}
       <div className="grid gap-6 sm:grid-cols-2 mb-12">
