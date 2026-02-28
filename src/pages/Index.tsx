@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useMaterials } from '@/hooks/useMaterials';
 import { useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/ProductCard';
-import { formatCurrency } from '@/lib/calculations';
+
 
 const Index = () => {
   const navigate = useNavigate();
@@ -15,14 +15,22 @@ const Index = () => {
 
   const isLoading = materialsLoading || productsLoading;
 
-  // Calculate summary stats
-  const avgCOGS = products.length > 0 
-    ? products.reduce((sum, p) => sum + p.total_cogs_per_unit, 0) / products.length 
+  // Calculate summary margin stats
+  const avgWholesaleMargin = products.length > 0
+    ? products.reduce((sum, p) => {
+        if (p.wholesale_price <= 0) return sum;
+        return sum + ((p.wholesale_price - p.total_cogs_per_unit) / p.wholesale_price) * 100;
+      }, 0) / products.filter(p => p.wholesale_price > 0).length || 0
     : 0;
-  const avgRetail = products.length > 0 
-    ? products.reduce((sum, p) => sum + p.retail_price, 0) / products.length 
+  const avgDTCMargin = products.length > 0
+    ? products.reduce((sum, p) => {
+        if (p.retail_price <= 0) return sum;
+        return sum + ((p.retail_price - p.total_cogs_per_unit) / p.retail_price) * 100;
+      }, 0) / products.filter(p => p.retail_price > 0).length || 0
     : 0;
-  const avgMargin = avgRetail > 0 ? ((avgRetail - avgCOGS) / avgRetail) * 100 : 0;
+  const avgCombinedMargin = (avgWholesaleMargin > 0 && avgDTCMargin > 0)
+    ? (avgWholesaleMargin + avgDTCMargin) / 2
+    : avgWholesaleMargin || avgDTCMargin;
 
   return (
     <Layout>
@@ -110,34 +118,34 @@ const Index = () => {
           <div className="grid gap-4 sm:grid-cols-3">
             <Card variant="subtle">
               <CardContent className="p-6 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground mx-auto mb-3">
                   <DollarSign className="h-5 w-5" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">Avg COGS/Unit</p>
+                <p className="text-sm text-muted-foreground mb-1">Avg Wholesale Margin</p>
                 <p className="font-display text-2xl font-bold text-foreground">
-                  {formatCurrency(avgCOGS)}
+                  {avgWholesaleMargin.toFixed(1)}%
+                </p>
+              </CardContent>
+            </Card>
+            <Card variant="subtle">
+              <CardContent className="p-6 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-3">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Avg DTC Margin</p>
+                <p className="font-display text-2xl font-bold text-foreground">
+                  {avgDTCMargin.toFixed(1)}%
                 </p>
               </CardContent>
             </Card>
             <Card variant="subtle">
               <CardContent className="p-6 text-center">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent mx-auto mb-3">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">Avg Retail Price</p>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {formatCurrency(avgRetail)}
-                </p>
-              </CardContent>
-            </Card>
-            <Card variant="subtle">
-              <CardContent className="p-6 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground mx-auto mb-3">
                   <Layers className="h-5 w-5" />
                 </div>
-                <p className="text-sm text-muted-foreground mb-1">Avg Margin</p>
+                <p className="text-sm text-muted-foreground mb-1">Avg Combined Margin</p>
                 <p className="font-display text-2xl font-bold text-foreground">
-                  {avgMargin.toFixed(1)}%
+                  {avgCombinedMargin.toFixed(1)}%
                 </p>
               </CardContent>
             </Card>
