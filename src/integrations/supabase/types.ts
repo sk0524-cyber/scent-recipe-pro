@@ -67,6 +67,7 @@ export type Database = {
       }
       product_component_items: {
         Row: {
+          cost_basis: string
           created_at: string
           id: string
           material_id: string
@@ -74,6 +75,7 @@ export type Database = {
           quantity_per_unit: number
         }
         Insert: {
+          cost_basis?: string
           created_at?: string
           id?: string
           material_id: string
@@ -81,6 +83,7 @@ export type Database = {
           quantity_per_unit?: number
         }
         Update: {
+          cost_basis?: string
           created_at?: string
           id?: string
           material_id?: string
