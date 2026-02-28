@@ -1,0 +1,1 @@
+ALTER TABLE public.product_component_items ADD COLUMN IF NOT EXISTS cost_basis TEXT NOT NULL DEFAULT 'unit' CHECK (cost_basis IN ('unit', 'pack'));

@@ -12,6 +12,9 @@ export interface Material {
   weight_per_case_unit: string | null;
   cost_per_unit: number;
   notes: string | null;
+  created_at: string;
+  updated_at: string;
+  user_id: string | null;
 }
 
 export interface FormulaItem {
