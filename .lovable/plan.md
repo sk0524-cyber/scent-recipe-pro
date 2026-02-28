@@ -1,46 +1,32 @@
 
 
-# Separate Retailer Margin from Maker Margin
+## Plan: Add `cost_basis` Column and Fix Build Error
 
-## What Changes
+### 1. Run Database Migration
 
-Right now, a single "Target Wholesale Margin" field controls both your maker margin goal AND the retailer shelf price calculation. This plan splits them into two independent settings:
+Add the `cost_basis` column to `product_component_items`:
 
-1. **Target Wholesale Margin** (existing, default 70%) -- controls the "Target Margin" button and the "On Target / Below Target" indicator. This is YOUR profit goal.
-2. **Retailer Margin** (new, default 50%) -- controls the "Retailer Shelf Price" calculation. This is the margin you expect the retailer to take.
+```sql
+ALTER TABLE public.product_component_items 
+ADD COLUMN IF NOT EXISTS cost_basis TEXT NOT NULL DEFAULT 'unit' 
+CHECK (cost_basis IN ('unit', 'pack'));
+```
 
-## How It Works
+### 2. Fix TypeScript Build Error
 
-A new "Retailer Margin (%)" input appears near the Retailer Shelf Price card. You set it to whatever margin you think the retailer will want (e.g., 50%). The shelf price updates accordingly:
+The build error is a type mismatch between two `Material` interfaces:
+- `src/lib/calculations.ts` defines a lightweight `Material` (missing `created_at`, `updated_at`, `user_id`)
+- `src/hooks/useMaterials.ts` defines the full `Material` (with those fields)
+- The `Calculations` type in `src/components/calculator/types.ts` references the full `Material` from `useMaterials`
 
-- Wholesale Price = $10, Retailer Margin = 50% --> Shelf Price = $20
-- Wholesale Price = $10, Retailer Margin = 40% --> Shelf Price = $16.50
+The `calculateFormulaCosts` and `calculateComponentCosts` functions in `calculations.ts` return objects typed with the lightweight `Material`, causing incompatibility when assigned to the `Calculations` type.
 
-The maker's wholesale margin target continues to work independently -- it only affects the "Target Margin" button and the "On Target" indicator.
+**Fix:** Update the `Material` interface in `src/lib/calculations.ts` to include the three missing optional fields (`created_at`, `updated_at`, `user_id`) so it's compatible with the full `Material` type from `useMaterials.ts`. This is the minimal change that resolves the type error without restructuring imports.
 
-## Technical Details
+### Technical Details
 
-### 1. Database: Add `retailer_margin_percent` column
+**File: `src/lib/calculations.ts`** (lines 3-15)
+- Add `created_at?: string`, `updated_at?: string`, `user_id?: string | null` to the `Material` interface
 
-- New column on `products`: `retailer_margin_percent` (numeric, NOT NULL, DEFAULT 50)
-- Existing `retailer_margin_target` stays as-is for the maker's wholesale margin
+This makes the lightweight `Material` a structural supertype-compatible shape with the full `Material`, so objects of the full type can be assigned where the lightweight type is expected.
 
-### 2. `src/hooks/useProducts.ts`
-
-- Add `retailer_margin_percent` to `ProductFormData` and `ProductWithItems` types
-- Include in create/update mutations
-
-### 3. `src/components/ProductCalculator.tsx`
-
-- Add a "Retailer Margin (%)" input field near the Retailer Shelf Price card (range 10-80)
-- Use `retailer_margin_percent` (not `retailer_margin_target`) for `calculateRetailerShelfPrice()` and the "Based on X% retailer margin" label
-- Keep `retailer_margin_target` only for the maker's "Target Margin" button and "On Target" indicator
-
-### 4. `src/components/ProductCard.tsx`
-
-- Read `product.retailer_margin_percent` (fallback 50) for shelf price calculation
-- Keep `product.retailer_margin_target` (fallback 70) for the maker margin indicator
-
-### 5. `src/lib/calculations.ts`
-
-- No changes needed -- `calculateRetailerShelfPrice` already accepts a margin parameter
