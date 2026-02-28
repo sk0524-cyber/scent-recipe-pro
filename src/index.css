@@ -228,3 +228,28 @@
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
+
+/* Driver.js tour theme overrides */
+.scent-tour-popover {
+  --djs-popover-bg: hsl(var(--card));
+  --djs-popover-color: hsl(var(--foreground));
+  --djs-popover-title-color: hsl(var(--foreground));
+  --djs-popover-description-color: hsl(var(--muted-foreground));
+  --djs-popover-border-color: hsl(var(--border));
+  --djs-popover-btn-bg: hsl(var(--primary));
+  --djs-popover-btn-color: hsl(var(--primary-foreground));
+  --djs-popover-btn-hover-bg: hsl(var(--primary) / 0.9);
+  --djs-popover-progress-color: hsl(var(--primary));
+  --djs-popover-shadow: var(--shadow-elevated);
+  font-family: 'Inter', system-ui, sans-serif;
+  border-radius: var(--radius) !important;
+}
+
+.scent-tour-popover .driver-popover-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+}
+
+.scent-tour-popover .driver-popover-description {
+  line-height: 1.6;
+}

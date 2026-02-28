@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Calculator, ArrowRight, TrendingUp, DollarSign, Layers, Tag, ShoppingBag } from 'lucide-react';
+import { Package, Calculator, ArrowRight, TrendingUp, DollarSign, Layers, Tag, ShoppingBag, Navigation } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,6 +8,7 @@ import { useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/ProductCard';
 import { formatCurrency } from '@/lib/calculations';
 import { HelpSection } from '@/components/HelpSection';
+import { useGuidedTour } from '@/hooks/useGuidedTour';
 
 
 const Index = () => {
@@ -16,6 +17,8 @@ const Index = () => {
   const { products, isLoading: productsLoading, duplicateProduct, deleteProduct } = useProducts();
 
   const isLoading = materialsLoading || productsLoading;
+  const isNewUser = !isLoading && products.length === 0 && materials.length === 0;
+  const { startTour } = useGuidedTour(isNewUser);
 
   // Calculate summary margin stats
   const avgWholesaleMargin = products.length > 0
@@ -44,31 +47,37 @@ const Index = () => {
   return (
     <Layout>
       {/* Hero section */}
-      <div className="mb-12 animate-fade-in">
+      <div id="tour-hero" className="mb-12 animate-fade-in">
         <h1 className="font-display text-4xl sm:text-5xl font-bold text-foreground mb-4">
           Home Fragrance
           <span className="block text-primary">COGS Calculator</span>
         </h1>
-        <p className="text-lg text-muted-foreground max-w-2xl">
+        <p className="text-lg text-muted-foreground max-w-2xl mb-4">
           Calculate your cost of goods sold and set profitable wholesale and retail prices 
           for candles, diffusers, room sprays, and more.
         </p>
+        <Button variant="ghost" size="sm" onClick={startTour} className="text-muted-foreground hover:text-foreground gap-2">
+          <Navigation className="h-4 w-4" />
+          Show Guided Tour
+        </Button>
       </div>
 
-      <HelpSection
-        title="Understanding Your Overview"
-        items={[
-          { title: 'What is "Avg Wholesale Margin"?', content: 'This is the average profit margin across all your products when sold at wholesale price. It shows how much profit you keep per unit after covering your costs of goods sold (COGS).' },
-          { title: 'What is "Avg DTC Margin"?', content: 'DTC stands for Direct-to-Consumer. This margin shows your average profit when selling directly to customers at your retail price — typically higher than wholesale since there\'s no middleman.' },
-          { title: 'What is "Avg Combined Margin"?', content: 'This is the average of your wholesale and DTC margins, giving you a blended view of overall profitability across both sales channels.' },
-          { title: 'What do the colours mean?', content: 'Green (Healthy) = margin is 60% or above\nAmber (Moderate) = margin is between 40% and 59%\nRed (Low) = margin is below 40%\n\nHigher margins give you more room for discounts, marketing, and unexpected costs.' },
-          { title: 'What are "Avg Cost per Unit" and "Avg Retail Price"?', content: '"Avg Cost per Unit" is the average COGS across all your products — what it costs you to make one unit.\n\n"Avg Retail Price" is the average suggested retail price across your products.' },
-        ]}
-      />
+      <div id="tour-help-section">
+        <HelpSection
+          title="Understanding Your Overview"
+          items={[
+            { title: 'What is "Avg Wholesale Margin"?', content: 'This is the average profit margin across all your products when sold at wholesale price. It shows how much profit you keep per unit after covering your costs of goods sold (COGS).' },
+            { title: 'What is "Avg DTC Margin"?', content: 'DTC stands for Direct-to-Consumer. This margin shows your average profit when selling directly to customers at your retail price — typically higher than wholesale since there\'s no middleman.' },
+            { title: 'What is "Avg Combined Margin"?', content: 'This is the average of your wholesale and DTC margins, giving you a blended view of overall profitability across both sales channels.' },
+            { title: 'What do the colours mean?', content: 'Green (Healthy) = margin is 60% or above\nAmber (Moderate) = margin is between 40% and 59%\nRed (Low) = margin is below 40%\n\nHigher margins give you more room for discounts, marketing, and unexpected costs.' },
+            { title: 'What are "Avg Cost per Unit" and "Avg Retail Price"?', content: '"Avg Cost per Unit" is the average COGS across all your products — what it costs you to make one unit.\n\n"Avg Retail Price" is the average suggested retail price across your products.' },
+          ]}
+        />
+      </div>
 
       {/* Quick action cards */}
       <div className="grid gap-6 sm:grid-cols-2 mb-12">
-        <Card className="group transition-smooth hover:shadow-elevated animate-fade-in" style={{ animationDelay: '0.1s' }}>
+        <Card id="tour-materials-card" className="group transition-smooth hover:shadow-elevated animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
@@ -98,7 +107,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <Card className="group transition-smooth hover:shadow-elevated animate-fade-in" style={{ animationDelay: '0.2s' }}>
+        <Card id="tour-calculator-card" className="group transition-smooth hover:shadow-elevated animate-fade-in" style={{ animationDelay: '0.2s' }}>
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-primary-foreground">
