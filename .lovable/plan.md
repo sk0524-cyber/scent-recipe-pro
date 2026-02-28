@@ -1,32 +1,42 @@
 
 
-## Plan: Add `cost_basis` Column and Fix Build Error
+# Add In-App Help & Instructions
 
-### 1. Run Database Migration
+Add contextual help sections to the Dashboard, Materials, and Calculator pages using collapsible accordion panels so instructions are available but don't clutter the interface.
 
-Add the `cost_basis` column to `product_component_items`:
+## What will be added
 
-```sql
-ALTER TABLE public.product_component_items 
-ADD COLUMN IF NOT EXISTS cost_basis TEXT NOT NULL DEFAULT 'unit' 
-CHECK (cost_basis IN ('unit', 'pack'));
-```
+### 1. Dashboard -- "Understanding Your Overview" help section
+A collapsible help panel below the hero section explaining:
+- What "Avg Wholesale Margin" means (profit you keep on wholesale sales)
+- What "Avg DTC Margin" means (profit you keep on direct-to-consumer sales)
+- What "Avg Combined Margin" means (average of both)
+- What the color codes mean (green = healthy 60%+, amber = moderate 40-59%, red = low under 40%)
+- What "Avg Cost per Unit" and "Avg Retail Price" represent
 
-### 2. Fix TypeScript Build Error
+### 2. Materials page -- "How to Add Materials" help section
+A collapsible help panel below the page header explaining:
+- What materials are (raw ingredients and packaging components)
+- Step-by-step: click "Add Material", choose a category, enter name, cost, and pack size
+- Tip: materials are reusable across all products
 
-The build error is a type mismatch between two `Material` interfaces:
-- `src/lib/calculations.ts` defines a lightweight `Material` (missing `created_at`, `updated_at`, `user_id`)
-- `src/hooks/useMaterials.ts` defines the full `Material` (with those fields)
-- The `Calculations` type in `src/components/calculator/types.ts` references the full `Material` from `useMaterials`
+### 3. Calculator page -- "How to Use the Calculator" help section
+A collapsible help panel below the page header explaining:
+- Step-by-step workflow: name your product, set batch size, add formula ingredients with percentages, add packaging components, set labor and overhead, then review COGS and pricing
+- How markup and target margin work
+- How to duplicate or export products
 
-The `calculateFormulaCosts` and `calculateComponentCosts` functions in `calculations.ts` return objects typed with the lightweight `Material`, causing incompatibility when assigned to the `Calculations` type.
+## Technical approach
 
-**Fix:** Update the `Material` interface in `src/lib/calculations.ts` to include the three missing optional fields (`created_at`, `updated_at`, `user_id`) so it's compatible with the full `Material` type from `useMaterials.ts`. This is the minimal change that resolves the type error without restructuring imports.
+- Create a new reusable `HelpSection` component using the existing `Collapsible` + `Accordion` UI primitives
+- Each page gets a `HelpSection` with relevant accordion items
+- Uses a `HelpCircle` icon button to toggle open/closed, keeping the UI clean
+- Styled consistently with the existing card/muted design language
 
-### Technical Details
+### Files to create
+- `src/components/HelpSection.tsx` -- reusable collapsible help wrapper with accordion items
 
-**File: `src/lib/calculations.ts`** (lines 3-15)
-- Add `created_at?: string`, `updated_at?: string`, `user_id?: string | null` to the `Material` interface
-
-This makes the lightweight `Material` a structural supertype-compatible shape with the full `Material`, so objects of the full type can be assigned where the lightweight type is expected.
-
+### Files to modify
+- `src/pages/Index.tsx` -- add help section after the hero
+- `src/pages/Materials.tsx` -- add help section after the page header
+- `src/pages/Calculator.tsx` -- add help section after the page header (in both list and form views)
