@@ -116,39 +116,35 @@ const Index = () => {
             Overview
           </h2>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Card variant="subtle">
-              <CardContent className="p-6 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground mx-auto mb-3">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">Avg Wholesale Margin</p>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {avgWholesaleMargin.toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
-            <Card variant="subtle">
-              <CardContent className="p-6 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-3">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">Avg DTC Margin</p>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {avgDTCMargin.toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
-            <Card variant="subtle">
-              <CardContent className="p-6 text-center">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent/10 text-accent mx-auto mb-3">
-                  <Layers className="h-5 w-5" />
-                </div>
-                <p className="text-sm text-muted-foreground mb-1">Avg Combined Margin</p>
-                <p className="font-display text-2xl font-bold text-foreground">
-                  {avgCombinedMargin.toFixed(1)}%
-                </p>
-              </CardContent>
-            </Card>
+            {[
+              { label: 'Avg Wholesale Margin', value: avgWholesaleMargin, icon: DollarSign },
+              { label: 'Avg DTC Margin', value: avgDTCMargin, icon: TrendingUp },
+              { label: 'Avg Combined Margin', value: avgCombinedMargin, icon: Layers },
+            ].map(({ label, value, icon: Icon }) => {
+              const color = value >= 60 ? 'green' : value >= 40 ? 'amber' : 'red';
+              const colorMap = {
+                green: { bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-600 dark:text-green-400', badge: 'text-green-700 dark:text-green-300' },
+                amber: { bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-600 dark:text-amber-400', badge: 'text-amber-700 dark:text-amber-300' },
+                red: { bg: 'bg-red-100 dark:bg-red-950/40', text: 'text-red-600 dark:text-red-400', badge: 'text-red-700 dark:text-red-300' },
+              };
+              const c = colorMap[color];
+              return (
+                <Card key={label} variant="subtle">
+                  <CardContent className="p-6 text-center">
+                    <div className={`flex h-10 w-10 items-center justify-center rounded-lg ${c.bg} ${c.text} mx-auto mb-3`}>
+                      <Icon className="h-5 w-5" />
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">{label}</p>
+                    <p className={`font-display text-2xl font-bold ${c.badge}`}>
+                      {value.toFixed(1)}%
+                    </p>
+                    <p className={`text-xs mt-1 ${c.text}`}>
+                      {value >= 60 ? 'Healthy' : value >= 40 ? 'Moderate' : 'Low'}
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
