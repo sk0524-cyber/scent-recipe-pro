@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Package, Calculator, ArrowRight, TrendingUp, DollarSign, Layers } from 'lucide-react';
+import { Package, Calculator, ArrowRight, TrendingUp, DollarSign, Layers, Tag, ShoppingBag } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useMaterials } from '@/hooks/useMaterials';
 import { useProducts } from '@/hooks/useProducts';
 import { ProductCard } from '@/components/ProductCard';
+import { formatCurrency } from '@/lib/calculations';
 
 
 const Index = () => {
@@ -31,6 +32,13 @@ const Index = () => {
   const avgCombinedMargin = (avgWholesaleMargin > 0 && avgDTCMargin > 0)
     ? (avgWholesaleMargin + avgDTCMargin) / 2
     : avgWholesaleMargin || avgDTCMargin;
+
+  const avgCostPerUnit = products.length > 0
+    ? products.reduce((sum, p) => sum + p.total_cogs_per_unit, 0) / products.length
+    : 0;
+  const avgRetailPrice = products.length > 0
+    ? products.reduce((sum, p) => sum + p.retail_price, 0) / products.filter(p => p.retail_price > 0).length || 0
+    : 0;
 
   return (
     <Layout>
@@ -145,6 +153,30 @@ const Index = () => {
                 </Card>
               );
             })}
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 mt-4">
+            <Card variant="subtle">
+              <CardContent className="p-6 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary text-secondary-foreground mx-auto mb-3">
+                  <ShoppingBag className="h-5 w-5" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Avg Cost per Unit</p>
+                <p className="font-display text-2xl font-bold text-foreground">
+                  {formatCurrency(avgCostPerUnit)}
+                </p>
+              </CardContent>
+            </Card>
+            <Card variant="subtle">
+              <CardContent className="p-6 text-center">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary mx-auto mb-3">
+                  <Tag className="h-5 w-5" />
+                </div>
+                <p className="text-sm text-muted-foreground mb-1">Avg Retail Price</p>
+                <p className="font-display text-2xl font-bold text-foreground">
+                  {formatCurrency(avgRetailPrice)}
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       )}
