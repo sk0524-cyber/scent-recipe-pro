@@ -21,18 +21,23 @@ const Index = () => {
   const { startTour } = useGuidedTour(isNewUser);
 
   // Calculate summary margin stats
-  const avgWholesaleMargin = products.length > 0
-    ? products.reduce((sum, p) => {
-        if (p.wholesale_price <= 0) return sum;
-        return sum + ((p.wholesale_price - p.total_cogs_per_unit) / p.wholesale_price) * 100;
-      }, 0) / products.filter(p => p.wholesale_price > 0).length || 0
+  // wholesale_price and retail_price are per-pack, so compare against pack COGS
+  const wholesaleProducts = products.filter(p => p.wholesale_price > 0);
+  const avgWholesaleMargin = wholesaleProducts.length > 0
+    ? wholesaleProducts.reduce((sum, p) => {
+        const packCOGS = p.total_cogs_per_unit * (p.selling_pack_size || 1);
+        return sum + ((p.wholesale_price - packCOGS) / p.wholesale_price) * 100;
+      }, 0) / wholesaleProducts.length
     : 0;
-  const avgDTCMargin = products.length > 0
-    ? products.reduce((sum, p) => {
-        if (p.retail_price <= 0) return sum;
-        return sum + ((p.retail_price - p.total_cogs_per_unit) / p.retail_price) * 100;
-      }, 0) / products.filter(p => p.retail_price > 0).length || 0
+
+  const dtcProducts = products.filter(p => p.retail_price > 0);
+  const avgDTCMargin = dtcProducts.length > 0
+    ? dtcProducts.reduce((sum, p) => {
+        const packCOGS = p.total_cogs_per_unit * (p.selling_pack_size || 1);
+        return sum + ((p.retail_price - packCOGS) / p.retail_price) * 100;
+      }, 0) / dtcProducts.length
     : 0;
+
   const avgCombinedMargin = (avgWholesaleMargin > 0 && avgDTCMargin > 0)
     ? (avgWholesaleMargin + avgDTCMargin) / 2
     : avgWholesaleMargin || avgDTCMargin;
@@ -40,8 +45,8 @@ const Index = () => {
   const avgCostPerUnit = products.length > 0
     ? products.reduce((sum, p) => sum + p.total_cogs_per_unit, 0) / products.length
     : 0;
-  const avgRetailPrice = products.length > 0
-    ? products.reduce((sum, p) => sum + p.retail_price, 0) / products.filter(p => p.retail_price > 0).length || 0
+  const avgRetailPrice = dtcProducts.length > 0
+    ? dtcProducts.reduce((sum, p) => sum + p.retail_price, 0) / dtcProducts.length
     : 0;
 
   return (
