@@ -200,7 +200,6 @@ export function useProducts() {
         description: 'Failed to create product. Please try again.',
         variant: 'destructive'
       });
-      if (import.meta.env.DEV) console.error('Error creating product:', error);
     }
   });
 
@@ -274,7 +273,6 @@ export function useProducts() {
         description: 'Failed to update product. Please try again.',
         variant: 'destructive'
       });
-      if (import.meta.env.DEV) console.error('Error updating product:', error);
     }
   });
 
@@ -332,7 +330,6 @@ export function useProducts() {
         description: 'Failed to delete product. Please try again.',
         variant: 'destructive'
       });
-      if (import.meta.env.DEV) console.error('Error deleting product:', error);
     }
   });
 

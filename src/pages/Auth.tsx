@@ -52,7 +52,6 @@ export default function Auth() {
         });
 
         if (error) {
-          if (import.meta.env.DEV) console.error('Login error:', error);
           toast({
             title: 'Login failed',
             description: 'Unable to log in. Please check your credentials and try again.',
@@ -69,7 +68,6 @@ export default function Auth() {
         });
 
         if (error) {
-          if (import.meta.env.DEV) console.error('Sign up error:', error);
           toast({
             title: 'Sign up failed',
             description: 'Unable to create account. Please try again.',
@@ -88,7 +86,6 @@ export default function Auth() {
         });
 
         if (error) {
-          if (import.meta.env.DEV) console.error('Password reset error:', error);
           toast({
             title: 'Error',
             description: 'Unable to send reset link. Please try again.',
@@ -107,7 +104,6 @@ export default function Auth() {
         });
 
         if (error) {
-          if (import.meta.env.DEV) console.error('Password update error:', error);
           toast({
             title: 'Error',
             description: 'Unable to update password. Please try again.',
