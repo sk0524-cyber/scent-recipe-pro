@@ -33,6 +33,15 @@ const tourSteps: DriveStep[] = [
     },
   },
   {
+    element: '#tour-retail-stores',
+    popover: {
+      title: 'Step 3: Track Store Sales',
+      description: 'Head to Settings to add your retail store partners first, then come here to see which stores sell the most and are the most profitable. You can log actual units sold per product per store each month.',
+      side: 'bottom',
+      align: 'start',
+    },
+  },
+  {
     element: '#tour-help-section',
     popover: {
       title: 'Need Help? Look for These',

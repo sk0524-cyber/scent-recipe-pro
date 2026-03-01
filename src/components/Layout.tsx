@@ -14,11 +14,11 @@ interface LayoutProps {
 }
 
 const navItems = [
-  { href: '/', icon: Home, label: 'Dashboard' },
-  { href: '/materials', icon: Package, label: 'Materials' },
-  { href: '/calculator', icon: Calculator, label: 'Calculator' },
-  { href: '/retail-stores', icon: Store, label: 'Retail Stores' },
-  { href: '/settings', icon: Settings, label: 'Settings' }
+  { href: '/', icon: Home, label: 'Dashboard', id: undefined },
+  { href: '/materials', icon: Package, label: 'Materials', id: undefined },
+  { href: '/calculator', icon: Calculator, label: 'Calculator', id: undefined },
+  { href: '/retail-stores', icon: Store, label: 'Retail Stores', id: 'tour-retail-stores' },
+  { href: '/settings', icon: Settings, label: 'Settings', id: undefined },
 ];
 
 export function Layout({ children }: LayoutProps) {
@@ -41,10 +41,11 @@ export function Layout({ children }: LayoutProps) {
 
           <div className="flex items-center gap-4">
             <nav className="flex items-center gap-1">
-              {navItems.map(({ href, icon: Icon, label }) => (
+              {navItems.map(({ href, icon: Icon, label, id }) => (
                 <Link
                   key={href}
                   to={href}
+                  id={id}
                   className={cn(
                     'flex items-center gap-2 rounded-lg px-4 py-2 font-body text-sm font-medium transition-smooth',
                     location.pathname === href

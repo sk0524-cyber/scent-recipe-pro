@@ -39,6 +39,30 @@ import {
 } from 'lucide-react';
 import { format, startOfMonth, addMonths, subMonths } from 'date-fns';
 import { toast } from 'sonner';
+import { HelpSection } from '@/components/HelpSection';
+
+const retailStoresHelp = [
+  {
+    title: 'How do I add a retail store?',
+    content:
+      'Go to the Settings page (click "Settings" in the top navigation). Scroll to the "Retail Store Directory" section and click "Add Store". Enter the store name, default commission percentage, monthly fee, and per-unit fee. Once saved, the store will appear here automatically.',
+  },
+  {
+    title: 'How do I assign products to a store?',
+    content:
+      'Open any product in the Calculator page. Scroll down to the "Wholesale Channels" section where you can assign the product to one or more retail stores and set estimated monthly units.',
+  },
+  {
+    title: 'How do I log actual units sold?',
+    content:
+      'Click on any store card to expand it. You\'ll see a table of all assigned products. In the "Units Sold" column, click the number and type the actual units sold for that month. It saves automatically when you click away or press Enter. Use the month picker at the top to switch between months.',
+  },
+  {
+    title: 'How are the metrics calculated?',
+    content:
+      'Units/Month shows actual sales data for the selected month (or falls back to your estimated monthly units if no sales have been logged).\n\nUnits/Year sums actual sales across the last 12 months.\n\nAvg Retail Price is the average retail price across all products assigned to the store.\n\nWholesale Margin is the average margin percentage across assigned products.\n\nStores are sorted by profitability (highest margin first).',
+  },
+];
 
 export default function RetailStoreAnalytics() {
   const { stores, isLoading: storesLoading } = useRetailStores();
@@ -148,27 +172,29 @@ export default function RetailStoreAnalytics() {
               Performance overview ranked by profitability. Click a store to log sales.
             </p>
           </div>
+        </div>
 
-          {/* Month Picker */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedMonth((m) => subMonths(m, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="text-sm font-medium min-w-[120px] text-center">
-              {format(selectedMonth, 'MMMM yyyy')}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
+        <HelpSection title="Help & Instructions" items={retailStoresHelp} />
+
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground">Viewing:</span>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSelectedMonth((m) => subMonths(m, 1))}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium min-w-[120px] text-center">
+            {format(selectedMonth, 'MMMM yyyy')}
+          </span>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSelectedMonth((m) => addMonths(m, 1))}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
         </div>
 
         {isLoading ? (
