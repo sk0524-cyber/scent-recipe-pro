@@ -1,65 +1,53 @@
 
 
-## Sales Tracking for Retail Stores
+## Public Landing Page
 
 ### Overview
-Create a sales tracking system so you can log actual units sold per product per store, then see which stores sell the most and which are the most profitable -- all from the Retail Stores page.
+Create a public-facing marketing landing page at `/landing` that unauthenticated visitors see. This page will showcase the product, highlight key features, and drive signups -- the first step toward making this a sellable SaaS product.
 
-### What you'll get
-- A new **"store_sales_records"** database table to log actual units sold per product per store per month
-- On the **Retail Stores page**, each store card becomes clickable and expands into a detail view showing:
-  - A table of all products assigned to that store with actual units sold (editable inline)
-  - Avg Retail Price, Wholesale Margin, Units/Month, and Units/Year computed from real sales data
-- An **inline editable units field** so you can quickly update units sold whenever you get info from a store or place an order
-- **Store-level summary cards** on the main Retail Stores page ranked by profitability so you can instantly see your best-performing stores
+### Route Changes
+- Add a new `/landing` route in `App.tsx` (no AuthGuard)
+- Redirect unauthenticated users from `/` to `/landing` (or make `/landing` the default entry point)
+- Keep `/auth` for login/signup, but add CTA buttons on the landing page that link to `/auth`
 
-### Database
+### Landing Page Sections
 
-**New table: `store_sales_records`**
+**1. Hero Section**
+- Bold headline: "Know Your True Cost. Set Profitable Prices."
+- Subheadline explaining the value for home fragrance / small product businesses
+- Two CTA buttons: "Get Started Free" (links to `/auth` in signup mode) and "See How It Works" (scrolls down)
+- Visual: the app's warm amber/terracotta brand identity
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | uuid, PK | auto-generated |
-| assignment_id | uuid, FK to product_store_assignments | links to a specific product-store pair |
-| period_month | date | first day of the month (e.g. 2026-03-01) |
-| units_sold | numeric, default 0 | actual units sold that month |
-| notes | text, nullable | optional notes (e.g. "restock order") |
-| created_at | timestamptz | auto |
-| updated_at | timestamptz | auto |
+**2. Features Grid (3-4 cards)**
+- **COGS Calculator** -- Build product formulas, calculate true cost per unit
+- **Pricing Engine** -- Set wholesale and retail prices with margin visibility
+- **Retail Store Tracking** -- Log sales per store, see which locations perform best
+- **Materials Library** -- Save materials once, reuse across all products
 
-- Unique constraint on (assignment_id, period_month) so there's one record per product-store per month
-- RLS policies scoped through product_store_assignments -> products -> user_id (same pattern as existing assignment policies)
+**3. How It Works (3 steps)**
+1. Add your materials and costs
+2. Build product formulas and calculate COGS
+3. Track sales and optimize pricing
 
-### UI Changes
+**4. Social Proof / Stats Section**
+- Placeholder metrics: "Calculate margins in seconds", "Track unlimited products", "Monitor retail partner performance"
 
-**1. Retail Stores page (`RetailStoreAnalytics.tsx`) -- enhanced store cards**
-- Each store card shows summary metrics computed from **actual sales data** (falling back to estimated_monthly_units when no sales records exist)
-- Cards are sorted by wholesale margin (most profitable first)
-- Clicking a card expands it to show a per-product breakdown table
+**5. Final CTA**
+- "Ready to stop guessing your margins?" with a signup button
 
-**2. Store detail view (expandable section or dialog per store card)**
-- Table columns: Product Name | Retail Price | Wholesale Price | Units Sold (this month) | Units/Year (sum of last 12 months) | Margin %
-- The "Units Sold" column has an inline editable input -- tap the number, type the new value, it saves automatically
-- A month picker at the top lets you select which month you're entering/viewing data for (defaults to current month)
-- "Add Sales Record" button for quick entry
+**6. Simple Footer**
+- App name, copyright, link to login
 
-**3. New hook: `useStoreSalesRecords.ts`**
-- Fetches sales records for a given store (or all stores)
-- Upsert mutation: insert or update units_sold for a given assignment + month
-- Uses the same auth pattern as existing hooks
+### New File
+- `src/pages/Landing.tsx` -- the full landing page component (no Layout wrapper, standalone design)
 
-### How metrics are calculated
+### Files to Edit
+- `src/App.tsx` -- add `/landing` route, update root `/` to redirect to landing for unauthenticated users
+- `src/components/AuthGuard.tsx` -- change redirect from `/auth` to `/landing` when not logged in
 
-- **Units / Month**: Sum of actual `units_sold` from sales records for the current month (falls back to `estimated_monthly_units` if no records)
-- **Units / Year**: Sum of `units_sold` across the last 12 months of sales records
-- **Avg Retail Price**: Average `retail_price` across all products assigned to the store (unchanged)
-- **Wholesale Margin**: Average `((wholesale_price - packCOGS) / wholesale_price * 100)` across assigned products (unchanged)
-
-### Files to create
-- `src/hooks/useStoreSalesRecords.ts` -- CRUD hook for sales records
-- Database migration for `store_sales_records` table
-
-### Files to edit
-- `src/pages/RetailStoreAnalytics.tsx` -- add expandable detail view, inline unit editing, month picker, sort by profitability
-- `src/hooks/useAllAssignments.ts` -- may need to fetch sales records alongside assignments
+### Design Approach
+- Uses existing design tokens (warm amber primary, Playfair Display headings, Inter body text)
+- Fully responsive with mobile-first layout
+- Smooth scroll-based animations using existing `animate-fade-in` classes
+- No new dependencies required
 
