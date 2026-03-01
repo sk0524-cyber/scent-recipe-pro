@@ -55,7 +55,6 @@ export function useSubscription(): UseSubscriptionReturn {
         .maybeSingle();
 
       if (error) {
-        console.warn('Could not fetch subscription, defaulting to free:', error.message);
         setState({
           tier: 'free',
           limits: getTierLimits('free'),
@@ -74,7 +73,6 @@ export function useSubscription(): UseSubscriptionReturn {
         error: null,
       });
     } catch (err) {
-      console.error('Error fetching subscription:', err);
       // Default to free tier on error
       setState({
         tier: 'free',
