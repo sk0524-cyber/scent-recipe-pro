@@ -11,6 +11,7 @@ import Calculator from "./pages/Calculator";
 import Settings from "./pages/Settings";
 import RetailStoreAnalytics from "./pages/RetailStoreAnalytics";
 import Auth from "./pages/Auth";
+import Landing from "./pages/Landing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/landing" element={<Landing />} />
             <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
             <Route path="/materials" element={<AuthGuard><Materials /></AuthGuard>} />
             <Route path="/calculator" element={<AuthGuard><Calculator /></AuthGuard>} />
