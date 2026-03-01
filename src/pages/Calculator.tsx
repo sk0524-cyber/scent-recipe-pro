@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { Plus, ArrowLeft, Download } from 'lucide-react';
+import { Plus, ArrowLeft, Download, FileText } from 'lucide-react';
 import { Layout } from '@/components/Layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { useProducts, ProductWithItems, ProductFormData } from '@/hooks/useProdu
 import { ProductCalculator } from '@/components/ProductCalculator';
 import { ProductCard } from '@/components/ProductCard';
 import { exportProductsToCSV } from '@/lib/export';
+import { exportProductCostSheetPDF } from '@/lib/pdf-export';
 import { toast } from '@/hooks/use-toast';
 import { HelpSection } from '@/components/HelpSection';
 import {
@@ -184,19 +185,34 @@ export default function Calculator() {
           </div>
           <div className="flex gap-3 shrink-0">
             {products.length > 0 && (
-              <Button
-                variant="outline"
-                onClick={() => {
-                  exportProductsToCSV(products);
-                  toast({
-                    title: 'Export complete',
-                    description: `Exported ${products.length} product(s) to CSV.`,
-                  });
-                }}
-              >
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    exportProductsToCSV(products);
+                    toast({
+                      title: 'Export complete',
+                      description: `Exported ${products.length} product(s) to CSV.`,
+                    });
+                  }}
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  Export CSV
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    products.forEach(p => exportProductCostSheetPDF(p));
+                    toast({
+                      title: 'PDF export complete',
+                      description: `Generated ${products.length} cost sheet(s).`,
+                    });
+                  }}
+                >
+                  <FileText className="mr-2 h-4 w-4" />
+                  Export PDFs
+                </Button>
+              </>
             )}
             <Button onClick={handleCreateNew} variant="warm">
               <Plus className="mr-2 h-4 w-4" />

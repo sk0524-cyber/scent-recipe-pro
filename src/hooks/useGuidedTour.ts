@@ -9,7 +9,7 @@ const tourSteps: DriveStep[] = [
     element: '#tour-hero',
     popover: {
       title: 'Welcome to COGS Calculator! 🕯️',
-      description: 'This app helps you calculate the true cost of your home fragrance products and set profitable prices. Let\'s take a quick tour!',
+      description: 'This app helps you calculate the true cost of your products and set profitable prices. Let\'s take a quick tour of everything you can do!',
       side: 'bottom',
       align: 'start',
     },
@@ -17,7 +17,7 @@ const tourSteps: DriveStep[] = [
   {
     element: '#tour-materials-card',
     popover: {
-      title: 'Step 1: Add Your Materials',
+      title: '1. Add Your Materials',
       description: 'Start here. Add your raw ingredients (wax, fragrance oil, dye) and packaging (vessels, lids, labels, boxes) with their costs. You only need to do this once — they\'re reusable across all products.',
       side: 'bottom',
       align: 'start',
@@ -26,8 +26,8 @@ const tourSteps: DriveStep[] = [
   {
     element: '#tour-calculator-card',
     popover: {
-      title: 'Step 2: Build a Product',
-      description: 'Once you have materials, come here to create a product. Set your formula percentages, add packaging, and the calculator will work out your COGS and suggest wholesale & retail prices.',
+      title: '2. Build a Product',
+      description: 'Once you have materials, create a product here. Set your formula percentages, add packaging components, and the calculator will work out your COGS and suggest wholesale & retail prices.',
       side: 'bottom',
       align: 'start',
     },
@@ -35,17 +35,29 @@ const tourSteps: DriveStep[] = [
   {
     element: '#tour-retail-stores',
     popover: {
-      title: 'Step 3: Track Store Sales',
-      description: 'Head to Settings to add your retail store partners first, then come here to see which stores sell the most and are the most profitable. You can log actual units sold per product per store each month.',
+      title: '3. Track Retail Store Sales',
+      description: 'Add your retail partners in Settings, then come here to assign products and log monthly sales. See which stores are most profitable at a glance.',
       side: 'bottom',
       align: 'start',
+    },
+  },
+  {
+    popover: {
+      title: '4. Export Reports 📄',
+      description: 'Generate PDF cost sheets for any product and download retail performance reports. Find export buttons on the Calculator and Retail Stores pages.',
+    },
+  },
+  {
+    popover: {
+      title: '5. Set Your Defaults ⚙️',
+      description: 'Head to Settings to configure your retail store directory, manage your account, and set up your business preferences.',
     },
   },
   {
     element: '#tour-help-section',
     popover: {
       title: 'Need Help? Look for These',
-      description: 'Each page has a help button like this one. Click it to expand detailed instructions and explanations for that page.',
+      description: 'Each page has an expandable help section like this. Click it for detailed instructions, formulas, and tips specific to that page.',
       side: 'bottom',
       align: 'start',
     },

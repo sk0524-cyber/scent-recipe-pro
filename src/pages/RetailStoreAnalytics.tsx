@@ -27,6 +27,7 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible';
 import { formatCurrency, formatPercentage } from '@/lib/calculations';
+import { exportRetailPerformanceReportPDF } from '@/lib/pdf-export';
 import {
   Store,
   DollarSign,
@@ -36,6 +37,7 @@ import {
   ChevronDown,
   ChevronLeft,
   ChevronRight,
+  FileText,
 } from 'lucide-react';
 import { format, startOfMonth, addMonths, subMonths } from 'date-fns';
 import { toast } from 'sonner';
@@ -172,6 +174,45 @@ export default function RetailStoreAnalytics() {
               Performance overview ranked by profitability. Click a store to log sales.
             </p>
           </div>
+          {stores.length > 0 && storeMetrics.some(s => s.productCount > 0) && (
+            <Button
+              variant="outline"
+              onClick={() => {
+                const reportData = storeMetrics.map(sm => ({
+                  storeName: sm.store.name,
+                  productCount: sm.productCount,
+                  avgRetailPrice: sm.avgRetailPrice,
+                  avgWholesaleMargin: sm.avgWholesaleMargin,
+                  unitsPerMonth: sm.unitsPerMonth,
+                  unitsPerYear: sm.unitsPerYear,
+                  products: assignments
+                    .filter(a => a.store_id === sm.store.id)
+                    .map(a => {
+                      const product = products.find(p => p.id === a.product_id);
+                      if (!product) return null;
+                      const packCOGS = product.total_cogs_per_unit * product.selling_pack_size;
+                      const margin = product.wholesale_price > 0
+                        ? ((product.wholesale_price - packCOGS) / product.wholesale_price) * 100
+                        : 0;
+                      return {
+                        name: product.name,
+                        retailPrice: product.retail_price,
+                        wholesalePrice: product.wholesale_price,
+                        unitsSold: getUnitsSoldForMonth(salesRecords, a.id, periodMonth),
+                        unitsYear: getUnitsLast12Months(salesRecords, a.id, selectedMonth),
+                        margin,
+                      };
+                    })
+                    .filter(Boolean) as any[],
+                }));
+                exportRetailPerformanceReportPDF(reportData, format(selectedMonth, 'MMMM yyyy'));
+                toast.success('Performance report downloaded');
+              }}
+            >
+              <FileText className="mr-2 h-4 w-4" />
+              Export PDF
+            </Button>
+          )}
         </div>
 
         <HelpSection title="Help & Instructions" items={retailStoresHelp} />

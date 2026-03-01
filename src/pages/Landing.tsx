@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, DollarSign, Store, Package, ArrowRight, ChevronDown, Flame, Droplets, Wind, Sparkles, Cigarette } from 'lucide-react';
+import { Calculator, DollarSign, Store, Package, ArrowRight, ChevronDown, Flame, Droplets, Wind, Sparkles, Cigarette, FileText, Navigation } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -23,6 +23,16 @@ const features = [
     icon: Package,
     title: 'Materials Library',
     description: 'Save your materials once and reuse them across all your product formulas.',
+  },
+  {
+    icon: Navigation,
+    title: 'Guided Onboarding',
+    description: 'Interactive tour walks you through setup step-by-step. Up and running in minutes.',
+  },
+  {
+    icon: FileText,
+    title: 'Exports & Reports',
+    description: 'Download branded PDF cost sheets and retail performance reports in one click.',
   },
 ];
 
@@ -104,7 +114,7 @@ export default function Landing() {
             Built specifically for makers, artisans, and small product businesses.
           </p>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f, i) => (
             <Card key={f.title} variant="elevated" className="animate-fade-in group hover:shadow-glow transition-smooth" style={{ animationDelay: `${i * 0.1}s` }}>
               <CardContent className="p-6 flex flex-col items-start gap-4">
