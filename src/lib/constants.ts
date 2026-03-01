@@ -50,6 +50,13 @@ export const PRODUCT_TYPES = [
   'Reed Diffuser',
   'Room Spray',
   'Incense',
+  'Body Butter',
+  'Lotion',
+  'Body Oil',
+  'Perfume',
+  'Cologne',
+  'Soap',
+  'Lip Balm',
   'Other'
 ] as const;
 

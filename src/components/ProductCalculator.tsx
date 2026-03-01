@@ -78,6 +78,48 @@ function getProductGuidance(productType: string): { formula: string; components:
         components: 'Typical components: product box, labels',
         fillLabel: 'Fill Weight',
       };
+    case 'Body Butter':
+      return {
+        formula: 'Butters (50-70%) + carrier oils (20-40%) + essential oils/fragrance (1-3%)',
+        components: 'Typical components: jar/tin, lid, labels',
+        fillLabel: 'Fill Weight (oz/g)',
+      };
+    case 'Lotion':
+      return {
+        formula: 'Water phase (60-70%) + oil phase (20-30%) + emulsifier + preservative',
+        components: 'Typical components: bottle/jar, pump/cap, labels',
+        fillLabel: 'Fill Volume (oz/ml)',
+      };
+    case 'Body Oil':
+      return {
+        formula: 'Carrier oils (95-99%) + essential oils/fragrance (1-5%)',
+        components: 'Typical components: bottle, dropper/cap, labels',
+        fillLabel: 'Fill Volume (oz/ml)',
+      };
+    case 'Perfume':
+      return {
+        formula: 'Perfume base/alcohol (80-90%) + fragrance oils (10-20%)',
+        components: 'Typical components: bottle, sprayer, cap, labels, box',
+        fillLabel: 'Fill Volume (ml)',
+      };
+    case 'Cologne':
+      return {
+        formula: 'Alcohol (85-95%) + fragrance oils (5-15%) + water (optional)',
+        components: 'Typical components: bottle, sprayer, cap, labels, box',
+        fillLabel: 'Fill Volume (ml)',
+      };
+    case 'Soap':
+      return {
+        formula: 'Oils/butters (varies) + lye solution. Use a soap calculator for exact ratios.',
+        components: 'Typical components: packaging, labels, shrink wrap',
+        fillLabel: 'Bar Weight (oz/g)',
+      };
+    case 'Lip Balm':
+      return {
+        formula: 'Wax/butter (25-35%) + carrier oils (55-70%) + flavor/essential oil (1-5%)',
+        components: 'Typical components: tube/tin, labels',
+        fillLabel: 'Fill Weight (oz/g)',
+      };
     default:
       return {
         formula: 'Define your recipe in percentages. Total should equal 100%.',
@@ -92,10 +134,18 @@ function getDefaultFillUnits(productType: string): string[] {
   switch (productType) {
     case 'Candle':
     case 'Wax Melt':
+    case 'Body Butter':
+    case 'Soap':
+    case 'Lip Balm':
       return ['oz', 'grams'];
     case 'Reed Diffuser':
     case 'Room Spray':
+    case 'Lotion':
+    case 'Body Oil':
       return ['oz', 'ml'];
+    case 'Perfume':
+    case 'Cologne':
+      return ['ml', 'oz'];
     case 'Incense':
       return ['bundle'];
     default:
@@ -117,6 +167,39 @@ function getDefaultFormulaItems(productType: string) {
       return [
         { material_id: '', percentage: 0, slot_type: 'wax' },
         { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    case 'Body Butter':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'butter1' },
+        { material_id: '', percentage: 0, slot_type: 'butter2' },
+        { material_id: '', percentage: 0, slot_type: 'carrier_oil' },
+        { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    case 'Lotion':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'water' },
+        { material_id: '', percentage: 0, slot_type: 'oil' },
+        { material_id: '', percentage: 0, slot_type: 'emulsifier' },
+        { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    case 'Body Oil':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'carrier_oil1' },
+        { material_id: '', percentage: 0, slot_type: 'carrier_oil2' },
+        { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    case 'Perfume':
+    case 'Cologne':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'base' },
+        { material_id: '', percentage: 0, slot_type: 'fragrance' },
+      ];
+    case 'Lip Balm':
+      return [
+        { material_id: '', percentage: 0, slot_type: 'wax' },
+        { material_id: '', percentage: 0, slot_type: 'butter' },
+        { material_id: '', percentage: 0, slot_type: 'carrier_oil' },
+        { material_id: '', percentage: 0, slot_type: 'flavor' },
       ];
     default:
       return [];
