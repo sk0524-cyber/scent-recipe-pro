@@ -48,29 +48,10 @@ export function useSubscription(): UseSubscriptionReturn {
     }
 
     try {
-      // Check if user has a subscription in the profiles table
-      // For now, we'll use a simple approach - you can expand this
-      // to integrate with Stripe or another payment provider
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('subscription_tier')
-        .eq('id', user.id)
-        .maybeSingle(); // Use maybeSingle to avoid error when no row exists
-
-      // Handle various error cases gracefully
-      if (error) {
-        // Table might not exist yet or other DB errors - default to free
-        console.warn('Could not fetch subscription, defaulting to free:', error.message);
-        setState({
-          tier: 'free',
-          limits: getTierLimits('free'),
-          isLoading: false,
-          error: null, // Don't show error to user for this
-        });
-        return;
-      }
-
-      const tierName = (profile?.subscription_tier as TierName) || 'free';
+      // No profiles table exists yet — default to free tier
+      // When a profiles table with subscription_tier is added,
+      // this can be updated to fetch the user's tier
+      const tierName: TierName = 'free';
       
       setState({
         tier: tierName,
