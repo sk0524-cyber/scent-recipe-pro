@@ -305,6 +305,44 @@ export type Database = {
         }
         Relationships: []
       }
+      store_sales_records: {
+        Row: {
+          assignment_id: string
+          created_at: string
+          id: string
+          notes: string | null
+          period_month: string
+          units_sold: number
+          updated_at: string
+        }
+        Insert: {
+          assignment_id: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_month: string
+          units_sold?: number
+          updated_at?: string
+        }
+        Update: {
+          assignment_id?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          period_month?: string
+          units_sold?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "store_sales_records_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "product_store_assignments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
