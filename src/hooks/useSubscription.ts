@@ -48,10 +48,24 @@ export function useSubscription(): UseSubscriptionReturn {
     }
 
     try {
-      // No profiles table exists yet — default to free tier
-      // When a profiles table with subscription_tier is added,
-      // this can be updated to fetch the user's tier
-      const tierName: TierName = 'free';
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('subscription_tier')
+        .eq('id', user.id)
+        .maybeSingle();
+
+      if (error) {
+        console.warn('Could not fetch subscription, defaulting to free:', error.message);
+        setState({
+          tier: 'free',
+          limits: getTierLimits('free'),
+          isLoading: false,
+          error: null,
+        });
+        return;
+      }
+
+      const tierName = (profile?.subscription_tier as TierName) || 'free';
       
       setState({
         tier: tierName,
