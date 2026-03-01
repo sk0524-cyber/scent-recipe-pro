@@ -159,7 +159,7 @@ export default function Landing() {
           <p className="mt-4 text-primary-foreground/80 max-w-lg mx-auto">
             Join makers and product businesses who price with confidence.
           </p>
-          <Button size="lg" variant="outline" className="mt-8 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10" asChild>
+          <Button size="lg" className="mt-8 bg-primary-foreground text-primary hover:bg-primary-foreground/90 font-semibold" asChild>
             <Link to="/auth">
               Get Started Free <ArrowRight className="ml-1 h-5 w-5" />
             </Link>
