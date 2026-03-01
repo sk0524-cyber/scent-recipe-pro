@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { ChevronDown, Plus, Trash2, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
@@ -152,25 +152,6 @@ export function WholesaleChannels({ productId, wholesalePrice, packCOGS }: Whole
                     );
                   })}
               </TableBody>
-              {assignments.length >= 2 && (() => {
-                const rows = assignments.map(computeRow).filter(Boolean) as NonNullable<ReturnType<typeof computeRow>>[];
-                if (rows.length < 2) return null;
-                const avg = (fn: (r: typeof rows[0]) => number) => rows.reduce((s, r) => s + fn(r), 0) / rows.length;
-                const avgMargin = avg(r => r.marginPct);
-                const marginColor = avgMargin >= 50 ? 'text-green-600 dark:text-green-400' : avgMargin >= 30 ? 'text-amber-600 dark:text-amber-400' : 'text-destructive';
-                return (
-                  <TableFooter>
-                    <TableRow>
-                      <TableCell className="text-sm font-semibold italic py-2">Average</TableCell>
-                      <TableCell className="text-sm text-right font-semibold py-2">{formatPercentage(avg(r => r.commissionPct))}</TableCell>
-                      <TableCell className="text-sm text-right font-semibold py-2">{formatCurrency(avg(r => r.feePerUnit))}</TableCell>
-                      <TableCell className="text-sm text-right font-semibold py-2">{formatCurrency(avg(r => r.netPrice))}</TableCell>
-                      <TableCell className={`text-sm text-right font-semibold py-2 ${marginColor}`}>{formatPercentage(avgMargin)}</TableCell>
-                      <TableCell className="py-2" />
-                    </TableRow>
-                  </TableFooter>
-                );
-              })()}
               </Table>
 
               <div className="mt-2">

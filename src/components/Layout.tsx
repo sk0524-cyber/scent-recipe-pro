@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Package, Calculator, Settings, LogOut } from 'lucide-react';
+import { Home, Package, Calculator, Store, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,7 @@ const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/materials', icon: Package, label: 'Materials' },
   { href: '/calculator', icon: Calculator, label: 'Calculator' },
+  { href: '/retail-stores', icon: Store, label: 'Retail Stores' },
   { href: '/settings', icon: Settings, label: 'Settings' }
 ];
 
