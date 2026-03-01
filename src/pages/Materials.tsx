@@ -4,6 +4,8 @@ import { Layout } from '@/components/Layout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import {
   Dialog,
   DialogContent,
@@ -29,11 +31,22 @@ import { HelpSection } from '@/components/HelpSection';
 
 export default function Materials() {
   const { materials, isLoading, createMaterial, updateMaterial, deleteMaterial } = useMaterials();
+  const { isFreeTier, limits, canAddMaterial } = useSubscription();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  const atMaterialLimit = !canAddMaterial(materials.length);
+
+  const handleAddMaterial = () => {
+    if (atMaterialLimit) {
+      // Could show a toast or the upgrade prompt is already visible
+      return;
+    }
+    setIsFormOpen(true);
+  };
 
   const handleSubmit = (data: MaterialFormData) => {
     if (editingMaterial) {
@@ -111,11 +124,21 @@ export default function Materials() {
               Manage your raw materials and packaging. Costs are automatically calculated.
             </p>
           </div>
-          <Button onClick={() => setIsFormOpen(true)}>
+          <Button onClick={handleAddMaterial} disabled={atMaterialLimit}>
             <Plus className="mr-2 h-4 w-4" />
             Add Material
           </Button>
         </div>
+
+        {/* Usage banner for free tier */}
+        {isFreeTier && (
+          <UpgradePrompt
+            variant="banner"
+            currentCount={materials.length}
+            maxCount={limits.maxMaterials}
+            itemName="Materials"
+          />
+        )}
 
         <HelpSection
           title="How to Add Materials"
@@ -184,7 +207,7 @@ export default function Materials() {
                   : 'Add your first material to get started.'}
               </p>
               {!searchQuery && !selectedCategory && (
-                <Button onClick={() => setIsFormOpen(true)}>
+                <Button onClick={handleAddMaterial} disabled={atMaterialLimit}>
                   <Plus className="mr-2 h-4 w-4" />
                   Add Material
                 </Button>

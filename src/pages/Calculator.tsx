@@ -13,6 +13,8 @@ import { exportProductsToCSV } from '@/lib/export';
 import { exportProductCostSheetPDF } from '@/lib/pdf-export';
 import { toast } from '@/hooks/use-toast';
 import { HelpSection } from '@/components/HelpSection';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +37,7 @@ export default function Calculator() {
     duplicateProduct,
     deleteProduct,
   } = useProducts();
+  const { isFreeTier, limits, canAddProduct, canExportPdf, canExportCsv } = useSubscription();
 
   const [searchParams, setSearchParams] = useSearchParams();
   const [showForm, setShowForm] = useState(false);
@@ -43,6 +46,7 @@ export default function Calculator() {
   const [isLoadingProduct, setIsLoadingProduct] = useState(false);
 
   const isLoading = materialsLoading || productsLoading;
+  const atProductLimit = !canAddProduct(products.length);
 
   // Handle edit from URL query parameter
   useEffect(() => {
@@ -58,6 +62,9 @@ export default function Calculator() {
   }, [searchParams, products, showForm, isLoadingProduct]);
 
   const handleCreateNew = () => {
+    if (atProductLimit) {
+      return; // Button should be disabled, but just in case
+    }
     setEditingProduct(null);
     setShowForm(true);
   };
@@ -189,12 +196,21 @@ export default function Calculator() {
                 <Button
                   variant="outline"
                   onClick={() => {
+                    if (!canExportCsv) {
+                      toast({
+                        title: 'Upgrade required',
+                        description: 'CSV export is available on paid plans.',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
                     exportProductsToCSV(products);
                     toast({
                       title: 'Export complete',
                       description: `Exported ${products.length} product(s) to CSV.`,
                     });
                   }}
+                  disabled={!canExportCsv}
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Export CSV
@@ -202,24 +218,43 @@ export default function Calculator() {
                 <Button
                   variant="outline"
                   onClick={() => {
+                    if (!canExportPdf) {
+                      toast({
+                        title: 'Upgrade required',
+                        description: 'PDF export is available on paid plans.',
+                        variant: 'destructive',
+                      });
+                      return;
+                    }
                     products.forEach(p => exportProductCostSheetPDF(p));
                     toast({
                       title: 'PDF export complete',
                       description: `Generated ${products.length} cost sheet(s).`,
                     });
                   }}
+                  disabled={!canExportPdf}
                 >
                   <FileText className="mr-2 h-4 w-4" />
                   Export PDFs
                 </Button>
               </>
             )}
-            <Button onClick={handleCreateNew} variant="warm">
+            <Button onClick={handleCreateNew} variant="warm" disabled={atProductLimit}>
               <Plus className="mr-2 h-4 w-4" />
               New Product
             </Button>
           </div>
         </div>
+
+        {/* Usage banner for free tier */}
+        {isFreeTier && (
+          <UpgradePrompt
+            variant="banner"
+            currentCount={products.length}
+            maxCount={limits.maxProducts}
+            itemName="Products"
+          />
+        )}
 
         <HelpSection
           title="How to Use the Calculator"
@@ -257,7 +292,7 @@ export default function Calculator() {
               <p className="text-muted-foreground mb-6">
                 Create your first product to calculate COGS and pricing.
               </p>
-              <Button onClick={handleCreateNew} variant="warm">
+              <Button onClick={handleCreateNew} variant="warm" disabled={atProductLimit}>
                 <Plus className="mr-2 h-4 w-4" />
                 Create First Product
               </Button>

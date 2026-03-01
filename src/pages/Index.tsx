@@ -9,16 +9,22 @@ import { ProductCard } from '@/components/ProductCard';
 import { formatCurrency } from '@/lib/calculations';
 import { HelpSection } from '@/components/HelpSection';
 import { useGuidedTour } from '@/hooks/useGuidedTour';
+import { useSubscription } from '@/hooks/useSubscription';
+import { UpgradePrompt } from '@/components/UpgradePrompt';
 
 
 const Index = () => {
   const navigate = useNavigate();
   const { materials, isLoading: materialsLoading } = useMaterials();
   const { products, isLoading: productsLoading, duplicateProduct, deleteProduct } = useProducts();
+  const { isFreeTier, limits, canAddProduct, canAddMaterial } = useSubscription();
 
   const isLoading = materialsLoading || productsLoading;
   const isNewUser = !isLoading && products.length === 0 && materials.length === 0;
   const { startTour } = useGuidedTour(isNewUser);
+
+  const atProductLimit = !canAddProduct(products.length);
+  const atMaterialLimit = !canAddMaterial(materials.length);
 
   // Calculate summary margin stats
   // wholesale_price and retail_price are per-pack, so compare against pack COGS
@@ -98,7 +104,7 @@ const Index = () => {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    {materials.length} materials saved
+                    {materials.length}{isFreeTier ? ` / ${limits.maxMaterials}` : ''} materials
                   </span>
                   <Button asChild variant="ghost" size="sm" className="group-hover:text-primary">
                     <Link to="/materials">
@@ -128,7 +134,7 @@ const Index = () => {
                 </p>
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
-                    {products.length} products saved
+                    {products.length}{isFreeTier ? ` / ${limits.maxProducts}` : ''} products
                   </span>
                   <Button asChild variant="ghost" size="sm" className="group-hover:text-primary">
                     <Link to="/calculator">
