@@ -233,6 +233,36 @@ export type Database = {
         }
         Relationships: []
       }
+      retail_stores: {
+        Row: {
+          created_at: string
+          default_commission_pct: number
+          id: string
+          monthly_fee: number
+          name: string
+          per_unit_fee: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          default_commission_pct: number
+          id?: string
+          monthly_fee?: number
+          name: string
+          per_unit_fee?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          default_commission_pct?: number
+          id?: string
+          monthly_fee?: number
+          name?: string
+          per_unit_fee?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
