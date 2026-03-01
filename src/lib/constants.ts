@@ -1,9 +1,15 @@
 export const MATERIAL_CATEGORIES = [
   'Wax',
   'Fragrance Oil',
+  'Essential Oil',
+  'Carrier Oil',
+  'Butter',
+  'Solid Oil',
+  'Perfume Base',
   'Reed Diffuser Base',
   'Room Spray Base',
   'Incense Base',
+  'Stabilizer',
   'Alcohol',
   'Water',
   'Candle Vessel',
@@ -70,9 +76,15 @@ export type WeightUnit = typeof WEIGHT_UNITS[number];
 export const WEIGHT_BASED_CATEGORIES = [
   'Wax',
   'Fragrance Oil',
+  'Essential Oil',
+  'Carrier Oil',
+  'Butter',
+  'Solid Oil',
+  'Perfume Base',
   'Reed Diffuser Base',
   'Room Spray Base',
-  'Incense Base'
+  'Incense Base',
+  'Stabilizer'
 ];
 
 // Categories that typically use "per case/pack" pricing
@@ -87,13 +99,19 @@ export const CASE_UNIT_CATEGORIES = [
   'Labeling'
 ];
 
-// Categories available for formula percentages (waxes/bases)
+// Categories available for formula percentages (waxes/bases/oils)
 export const FORMULA_CATEGORIES = [
   'Wax',
   'Fragrance Oil',
+  'Essential Oil',
+  'Carrier Oil',
+  'Butter',
+  'Solid Oil',
+  'Perfume Base',
   'Reed Diffuser Base',
   'Room Spray Base',
   'Incense Base',
+  'Stabilizer',
   'Alcohol',
   'Water'
 ];
