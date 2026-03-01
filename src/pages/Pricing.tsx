@@ -3,58 +3,31 @@ import { Check, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
+import { TIERS, TierName } from '@/lib/tiers';
 
-const tiers = [
-  {
-    name: 'Free',
-    price: '$0',
-    period: 'forever',
-    description: 'Perfect for getting started and testing the waters.',
-    features: [
-      'Up to 5 products',
-      'Up to 10 materials',
-      'Basic COGS calculator',
-      'Wholesale & retail pricing',
-      'Community support',
-    ],
-    cta: 'Get Started Free',
-    highlighted: false,
-  },
-  {
-    name: 'Pro',
-    price: '$19',
-    period: '/month',
-    description: 'For growing makers ready to scale their pricing strategy.',
-    features: [
-      'Unlimited products',
-      'Unlimited materials',
-      'Full COGS calculator',
-      'Retail store tracking',
-      'Sales performance analytics',
-      'CSV & PDF exports',
-      'Priority support',
-    ],
-    cta: 'Start Pro Trial',
-    highlighted: true,
-  },
-  {
-    name: 'Business',
-    price: '$49',
-    period: '/month',
-    description: 'For teams and multi-brand operations.',
-    features: [
-      'Everything in Pro',
-      'Team collaboration',
-      'Multi-brand support',
-      'Advanced analytics',
-      'Custom reports',
-      'API access',
-      'Dedicated support',
-    ],
-    cta: 'Contact Sales',
-    highlighted: false,
-  },
-];
+// Map tier data to display format
+const tierOrder: TierName[] = ['free', 'starter', 'pro', 'business'];
+
+const tierDisplayConfig: Record<TierName, { cta: string; highlighted: boolean; period: string }> = {
+  free: { cta: 'Get Started Free', highlighted: false, period: 'forever' },
+  starter: { cta: 'Start Starter', highlighted: false, period: '/month' },
+  pro: { cta: 'Start Pro Trial', highlighted: true, period: '/month' },
+  business: { cta: 'Contact Sales', highlighted: false, period: '/month' },
+};
+
+const tiers = tierOrder.map((tierName) => {
+  const tier = TIERS[tierName];
+  const config = tierDisplayConfig[tierName];
+  return {
+    name: tier.displayName,
+    price: tier.price === 0 ? '$0' : `$${tier.price}`,
+    period: config.period,
+    description: tier.description,
+    features: tier.features,
+    cta: config.cta,
+    highlighted: config.highlighted,
+  };
+});
 
 export default function Pricing() {
   return (
