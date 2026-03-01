@@ -149,6 +149,48 @@ export type Database = {
           },
         ]
       }
+      product_store_assignments: {
+        Row: {
+          commission_override_pct: number | null
+          created_at: string
+          estimated_monthly_units: number
+          id: string
+          product_id: string
+          store_id: string
+        }
+        Insert: {
+          commission_override_pct?: number | null
+          created_at?: string
+          estimated_monthly_units?: number
+          id?: string
+          product_id: string
+          store_id: string
+        }
+        Update: {
+          commission_override_pct?: number | null
+          created_at?: string
+          estimated_monthly_units?: number
+          id?: string
+          product_id?: string
+          store_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_store_assignments_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_store_assignments_store_id_fkey"
+            columns: ["store_id"]
+            isOneToOne: false
+            referencedRelation: "retail_stores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           created_at: string

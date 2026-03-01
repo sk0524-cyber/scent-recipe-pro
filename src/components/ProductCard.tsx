@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/tooltip';
 import { Product } from '@/hooks/useProducts';
 import { formatCurrency, calculateProfitMargin, formatPercentage, calculatePackCOGS, calculateWholesalePrice, calculateRetailPrice, isMakerMarginReady, calculateRetailerShelfPrice } from '@/lib/calculations';
+import { WholesaleChannels } from '@/components/WholesaleChannels';
 
 interface ProductCardProps {
   product: Product;
@@ -156,6 +157,13 @@ export function ProductCard({ product, onEdit, onDuplicate, onDelete }: ProductC
             </div>
           );
         })()}
+
+        {/* Wholesale Channels */}
+        <WholesaleChannels
+          productId={product.id}
+          wholesalePrice={wholesalePrice}
+          packCOGS={packCOGS}
+        />
       </CardContent>
     </Card>
   );
