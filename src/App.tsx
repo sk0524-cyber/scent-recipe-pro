@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import Materials from "./pages/Materials";
 import Calculator from "./pages/Calculator";
 import Settings from "./pages/Settings";
+import RetailStoreAnalytics from "./pages/RetailStoreAnalytics";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -26,6 +27,7 @@ const App = () => (
             <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
             <Route path="/materials" element={<AuthGuard><Materials /></AuthGuard>} />
             <Route path="/calculator" element={<AuthGuard><Calculator /></AuthGuard>} />
+            <Route path="/retail-stores" element={<AuthGuard><RetailStoreAnalytics /></AuthGuard>} />
             <Route path="/settings" element={<AuthGuard><Settings /></AuthGuard>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
