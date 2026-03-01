@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Package, Calculator, LogOut } from 'lucide-react';
+import { Home, Package, Calculator, Settings, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,8 @@ interface LayoutProps {
 const navItems = [
   { href: '/', icon: Home, label: 'Dashboard' },
   { href: '/materials', icon: Package, label: 'Materials' },
-  { href: '/calculator', icon: Calculator, label: 'Calculator' }
+  { href: '/calculator', icon: Calculator, label: 'Calculator' },
+  { href: '/settings', icon: Settings, label: 'Settings' }
 ];
 
 export function Layout({ children }: LayoutProps) {
