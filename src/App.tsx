@@ -12,6 +12,7 @@ import Settings from "./pages/Settings";
 import RetailStoreAnalytics from "./pages/RetailStoreAnalytics";
 import Auth from "./pages/Auth";
 import Landing from "./pages/Landing";
+import Pricing from "./pages/Pricing";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/landing" element={<Landing />} />
+            <Route path="/pricing" element={<Pricing />} />
             <Route path="/" element={<AuthGuard><Index /></AuthGuard>} />
             <Route path="/materials" element={<AuthGuard><Materials /></AuthGuard>} />
             <Route path="/calculator" element={<AuthGuard><Calculator /></AuthGuard>} />

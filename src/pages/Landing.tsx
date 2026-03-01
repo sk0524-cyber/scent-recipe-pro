@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Calculator, DollarSign, Store, Package, ArrowRight, ChevronDown } from 'lucide-react';
+import { Calculator, DollarSign, Store, Package, ArrowRight, ChevronDown, Flame, Droplets, Wind, Sparkles, Cigarette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -53,6 +53,9 @@ export default function Landing() {
             </span>
           </Link>
           <div className="flex items-center gap-3">
+            <Button variant="ghost" asChild>
+              <Link to="/pricing">Pricing</Link>
+            </Button>
             <Button variant="ghost" asChild>
               <Link to="/auth">Log in</Link>
             </Button>
@@ -116,8 +119,46 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* How It Works */}
+      {/* Product Types */}
       <section className="bg-muted/50 py-20 md:py-28">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+              Built for Every Product Type
+            </h2>
+            <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
+              From candles to cosmetics — calculate COGS for any product-based business.
+            </p>
+          </div>
+          <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto">
+            {[
+              { icon: Flame, label: 'Candles' },
+              { icon: Droplets, label: 'Wax Melts' },
+              { icon: Wind, label: 'Reed Diffusers' },
+              { icon: Sparkles, label: 'Room Sprays' },
+              { icon: Cigarette, label: 'Incense' },
+              { icon: Droplets, label: 'Cosmetics' },
+              { icon: Package, label: 'Food Products' },
+              { icon: Sparkles, label: 'Soap & Bath' },
+            ].map((type, i) => (
+              <div
+                key={type.label}
+                className="flex items-center gap-2 rounded-full border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground shadow-soft animate-fade-in transition-smooth hover:shadow-elevated hover:border-primary/30"
+                style={{ animationDelay: `${i * 0.05}s` }}
+              >
+                <type.icon className="h-4 w-4 text-primary" />
+                {type.label}
+              </div>
+            ))}
+          </div>
+          <p className="text-center mt-8 text-sm text-muted-foreground">
+            …and more coming soon. Works for any industry with raw materials and formulas.
+          </p>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
             <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
