@@ -133,11 +133,11 @@ export default function Landing() {
       <section className="bg-muted/50 py-20 md:py-28">
         <div className="container mx-auto px-4">
           <div className="text-center mb-16">
-            <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
-              Built for Every Product Type
+          <h2 className="font-display text-3xl md:text-4xl font-bold text-foreground">
+              Built for Home, Beauty & Bath Brands
             </h2>
             <p className="mt-4 text-muted-foreground max-w-xl mx-auto">
-              From candles to cosmetics — calculate COGS for any product-based business.
+              From candles to skincare — calculate COGS for your home fragrance, beauty, and bath products.
             </p>
           </div>
           <div className="flex flex-wrap justify-center gap-4 max-w-3xl mx-auto">
@@ -147,9 +147,11 @@ export default function Landing() {
               { icon: Wind, label: 'Reed Diffusers' },
               { icon: Sparkles, label: 'Room Sprays' },
               { icon: Cigarette, label: 'Incense' },
-              { icon: Droplets, label: 'Cosmetics' },
-              { icon: Package, label: 'Food Products' },
-              { icon: Sparkles, label: 'Soap & Bath' },
+              { icon: Droplets, label: 'Perfume' },
+              { icon: Sparkles, label: 'Beauty & Skincare' },
+              { icon: Package, label: 'Soap & Bath' },
+              { icon: Droplets, label: 'Body Butter' },
+              { icon: Sparkles, label: 'Lotions' },
             ].map((type, i) => (
               <div
                 key={type.label}
@@ -162,7 +164,7 @@ export default function Landing() {
             ))}
           </div>
           <p className="text-center mt-8 text-sm text-muted-foreground">
-            …and more coming soon. Works for any industry with raw materials and formulas.
+            Purpose-built for makers in the home fragrance, beauty, and bath space.
           </p>
         </div>
       </section>
