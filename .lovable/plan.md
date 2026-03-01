@@ -1,23 +1,30 @@
 
+## Restore GitHub Changes: Profiles Table and Subscription Hook
 
-## Add Perfume to Product Types
+### What happened
+Your GitHub push included a `profiles` table and a `useSubscription.ts` hook that queries it, but these changes weren't fully synced. The migration file exists in the codebase but was never applied to the database, and the subscription hook was reverted to a hardcoded "free" tier.
 
-### What changes
-Single edit to `src/pages/Landing.tsx` — add a "Perfume" pill to the product types array alongside the other approved updates from the previous plan:
+### Plan
 
-**Updated product types list:**
-- Candles, Wax Melts, Reed Diffusers, Room Sprays, Incense, **Perfume**, Beauty & Skincare, Soap & Bath, Body Butter, Lotions
+#### 1. Create the profiles table in the database
+Run a migration to create the `profiles` table with:
+- `id` (UUID, references auth.users)
+- `subscription_tier` (text, default 'free')
+- `stripe_customer_id` and `stripe_subscription_id` (text, nullable)
+- `subscription_status` (text, default 'active')
+- Timestamps
+- RLS policies (users can only read/update/insert their own profile)
+- Trigger to auto-create a profile row when a new user signs up
+- Index on `subscription_tier`
 
-**Also applying the previously approved changes:**
-- Remove "Food Products"
-- Rename "Cosmetics" to "Beauty & Skincare"
-- Add "Body Butter" and "Lotions"
-- Update heading to "Built for Home, Beauty & Bath Brands"
-- Update subtext to "From candles to skincare -- calculate COGS for your home fragrance, beauty, and bath products."
-- Update trailing text to "Purpose-built for makers in the home fragrance, beauty, and bath space."
+#### 2. Restore the useSubscription.ts hook
+Update `useSubscription.ts` to query the `profiles` table for the user's `subscription_tier` instead of hardcoding `'free'`. The restored code will:
+- Query `profiles` table with `maybeSingle()` to handle missing rows gracefully
+- Fall back to `'free'` tier if no profile exists or on error
+- Log warnings (not errors) for missing profiles
 
-Perfume will use the `Droplets` icon to match the liquid/fragrance theme.
+### Technical Details
 
-### Technical detail
-Single file edit: `src/pages/Landing.tsx` lines 135-166. No backend, routing, or constants changes needed.
+**Migration SQL** will match the existing `supabase/migrations/20260301_add_profiles_subscription.sql` file content.
 
+**useSubscription.ts changes** (lines 50-63): Replace the hardcoded free tier block with a query to `supabase.from('profiles').select('subscription_tier').eq('id', user.id).maybeSingle()`, with graceful fallback on error.
